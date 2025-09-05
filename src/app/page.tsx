@@ -1,103 +1,195 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useCallback } from 'react';
+import { useSpotifyAuth, useSpotifyToken } from '@/hooks/useSpotifyAuth';
+import { spotifyApi } from '@/services/spotifyApi';
+import type { CurrentUser, CurrentUserPlaylists, SpotifyArtist } from '@/types';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  // Auth state
+  const { code, isLoading: authLoading, error: authError, initiateAuth, clearAuth } = useSpotifyAuth();
+  const { token, loading: tokenLoading, error: tokenError, fetchToken, clearToken } = useSpotifyToken(code);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Data state
+  const [profile, setProfile] = useState<CurrentUser | null>(null);
+  const [playlists, setPlaylists] = useState<CurrentUserPlaylists | null>(null);
+  const [artistData, setArtistData] = useState<SpotifyArtist | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleGetToken = useCallback(async () => {
+    if (!code) {
+      console.log('No authorization code available');
+      return;
+    }
+    
+    try {
+      await fetchToken();
+    } catch (error) {
+      console.error('Failed to get token:', error);
+    }
+  }, [code, fetchToken]);
+
+  const handleGetProfile = useCallback(async () => {
+    if (!token) {
+      console.log('No token available for profile');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await spotifyApi.getCurrentUser(token);
+      setProfile(result);
+      console.log('Profile retrieved:', result);
+    } catch (error) {
+      console.error('Failed to get profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  const handleGetPlaylists = useCallback(async () => {
+    if (!token) {
+      console.log('No token available for playlists');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await spotifyApi.getCurrentUserPlaylists(token);
+      setPlaylists(result);
+      console.log('Playlists retrieved:', result);
+    } catch (error) {
+      console.error('Failed to get playlists:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  const handleGetArtistData = useCallback(async () => {
+    if (!token) {
+      console.log('No token available for artist data');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Example artist ID (Arctic Monkeys)
+      const artistId = "7Ln80lUS6He07XvHI8qqHH";
+      const result = await spotifyApi.getArtist(token, artistId);
+      setArtistData(result);
+      console.log('Artist data retrieved:', result);
+    } catch (error) {
+      console.error('Failed to get artist data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  const handleClearAll = useCallback(() => {
+    clearAuth();
+    clearToken();
+    setProfile(null);
+    setPlaylists(null);
+    setArtistData(null);
+  }, [clearAuth, clearToken]);
+
+  return (
+    <main className="container mx-auto p-8">
+      <h1 className="text-4xl font-bold mb-8 text-center">PlayUp - Spotify Integration</h1>
+      
+      <div className="space-y-4">
+        {/* Auth Status */}
+        <div className="text-center">
+          <p className="mb-2">
+            Code: {code ? 'Authorization received' : 'No authorization code'}
+          </p>
+          <p className="mb-4">
+            Token: {token ? 'Token received' : 'No token'}
+          </p>
+          {authError && <p className="text-red-500">Auth Error: {authError}</p>}
+          {tokenError && <p className="text-red-500">Token Error: {tokenError}</p>}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+        {/* Control Buttons */}
+        <div className="flex flex-wrap justify-center gap-2">
+          <button 
+            onClick={initiateAuth} 
+            disabled={authLoading}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {authLoading ? 'Authenticating...' : 'Get Spotify Auth'}
+          </button>
+
+          <button 
+            onClick={handleGetToken} 
+            disabled={tokenLoading || !code}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {tokenLoading ? 'Getting Token...' : 'Get Token'}
+          </button>
+
+          <button 
+            onClick={handleGetProfile} 
+            disabled={loading || !token}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            {loading ? 'Loading...' : 'Get Profile'}
+          </button>
+
+          <button 
+            onClick={handleGetPlaylists} 
+            disabled={loading || !token}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
+            {loading ? 'Loading...' : 'Get Playlists'}
+          </button>
+
+          <button 
+            onClick={handleGetArtistData} 
+            disabled={loading || !token}
+            className="bg-pink-600 hover:bg-pink-700"
+          >
+            {loading ? 'Loading...' : 'Get Artist Data'}
+          </button>
+
+          <button 
+            onClick={handleClearAll}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            Clear All
+          </button>
+        </div>
+
+        {/* Data Display */}
+        <div className="space-y-6">
+          {profile && (
+            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+              <h3 className="text-xl font-bold mb-2">Profile</h3>
+              <pre className="text-sm overflow-auto">
+                {JSON.stringify(profile, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          {playlists && (
+            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+              <h3 className="text-xl font-bold mb-2">Playlists</h3>
+              <pre className="text-sm overflow-auto">
+                {JSON.stringify(playlists, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          {artistData && (
+            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+              <h3 className="text-xl font-bold mb-2">Artist Data</h3>
+              <pre className="text-sm overflow-auto">
+                {JSON.stringify(artistData, null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
+      </div>
+    </main>
   );
 }
