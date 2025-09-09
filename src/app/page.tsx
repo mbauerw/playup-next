@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useSpotifyAuth, useSpotifyToken } from '@/hooks/useSpotifyAuth';
 import { spotifyApi } from '@/services/spotifyApi';
@@ -76,7 +76,6 @@ export default function Home() {
 
     setLoading(true);
     try {
-      // Example artist ID (Arctic Monkeys)
       const artistId = "7Ln80lUS6He07XvHI8qqHH";
       const result = await spotifyApi.getArtist(token, artistId);
       setArtistData(result);

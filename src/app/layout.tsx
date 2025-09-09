@@ -6,8 +6,8 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'PlayUp - Spotify Integration',
-  description: 'A Spotify integration app built with Next.js',
+  title: 'PlayUp - Unique Spotify Playlists',
+  description: 'A Spotify integration app to create unique and customizable playlists. Built with Next.js',
 };
 
 export default function RootLayout({

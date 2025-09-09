@@ -1,0 +1,256 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url  	    = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")  // Add this line
+}
+
+// ================================
+// USER AUTHENTICATION
+// ================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String?  // For credentials login
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Spotify integration fields
+  spotifyId           String?   @unique
+  spotifyAccessToken  String?
+  spotifyRefreshToken String?
+  spotifyTokenExpiry  DateTime?
+
+  // Relationships
+  playlistHistory   PlaylistHistory[]
+  createdPlaylists  CreatedPlaylist[]
+  listeningHistory  ListeningHistory[]
+
+  @@map("users")
+}
+
+// ================================
+// MUSIC DATA MODELS
+// ================================
+
+model Artist {
+  id                String @id @default(cuid())
+  spotifyId         String @unique
+  name              String
+  popularity        Int?
+  genres            String[] // Array of genre strings
+  imageUrl          String?
+  followerCount     Int?
+  spotifyUrl        String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  tracks            TrackArtist[]
+  albums            AlbumArtist[]
+
+  @@index([spotifyId])
+  @@index([name])
+  @@map("artists")
+}
+
+model Album {
+  id                String @id @default(cuid())
+  spotifyId         String @unique
+  name              String
+  albumType         String // "album", "single", "compilation"
+  totalTracks       Int
+  releaseDate       String?
+  releaseDatePrecision String? // "year", "month", "day"
+  imageUrl          String?
+  spotifyUrl        String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  tracks            Track[]
+  artists           AlbumArtist[]
+
+  @@index([spotifyId])
+  @@index([name])
+  @@map("albums")
+}
+
+model Track {
+  id                String @id @default(cuid())
+  spotifyId         String @unique
+  name              String
+  popularity        Int?
+  durationMs        Int
+  discNumber        Int
+  trackNumber       Int
+  explicit          Boolean
+  isPlayable        Boolean @default(true)
+  previewUrl        String?
+  isLocal           Boolean @default(false)
+  
+  // External identifiers
+  isrc              String?
+  ean               String?
+  upc               String?
+  
+  // Album relationship
+  albumId           String
+  album             Album @relation(fields: [albumId], references: [id])
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  artists           TrackArtist[]
+  playlistEntries   PlaylistEntry[]
+  listeningHistory  ListeningHistory[]
+
+  @@index([spotifyId])
+  @@index([albumId])
+  @@index([name])
+  @@map("tracks")
+}
+
+// ================================
+// MANY-TO-MANY RELATIONSHIP TABLES
+// ================================
+
+model TrackArtist {
+  id       String @id @default(cuid())
+  trackId  String
+  artistId String
+  order    Int    @default(0) // 0 = primary artist, 1+ = featured artists
+
+  track    Track  @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  artist   Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([trackId, artistId])
+  @@index([trackId])
+  @@index([artistId])
+  @@map("track_artists")
+}
+
+model AlbumArtist {
+  id       String @id @default(cuid())
+  albumId  String
+  artistId String
+  order    Int    @default(0) // 0 = primary artist, 1+ = featured artists
+
+  album    Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  artist   Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([albumId, artistId])
+  @@index([albumId])
+  @@index([artistId])
+  @@map("album_artists")
+}
+
+// ================================
+// PLAYLIST MODELS
+// ================================
+
+model PlaylistHistory {
+  id                String @id @default(cuid())
+  userId            String
+  spotifyPlaylistId String
+  playlistName      String
+  description       String?
+  snapshotId        String   // Spotify's version identifier
+  isPublic          Boolean?
+  collaborative     Boolean?
+  followerCount     Int?
+  capturedAt        DateTime @default(now())
+  
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks            PlaylistEntry[] @relation("HistoryPlaylistEntries")
+
+  @@index([userId])
+  @@index([spotifyPlaylistId])
+  @@index([capturedAt])
+  @@map("playlist_history")
+}
+
+model CreatedPlaylist {
+  id           String @id @default(cuid())
+  userId       String
+  playlistName String
+  description  String?
+  isPublic     Boolean @default(false)
+  collaborative Boolean @default(false)
+  spotifyPlaylistId String? // If synced to Spotify
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks       PlaylistEntry[] @relation("CreatedPlaylistEntries")
+
+  @@index([userId])
+  @@index([spotifyPlaylistId])
+  @@map("created_playlists")
+}
+
+// ================================
+// PLAYLIST-TRACK RELATIONSHIPS
+// ================================
+
+model PlaylistEntry {
+  id                String @id @default(cuid())
+  
+  // Track reference
+  trackId           String
+  track             Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  
+  // Playlist references (one will be null, one will be set)
+  playlistHistoryId String?
+  createdPlaylistId String?
+  
+  // Entry-specific metadata
+  addedAt           DateTime
+  position          Int
+  addedBy           String? // User who added it (for collaborative playlists)
+  
+  // Relationships
+  playlistHistory   PlaylistHistory? @relation("HistoryPlaylistEntries", fields: [playlistHistoryId], references: [id], onDelete: Cascade)
+  createdPlaylist   CreatedPlaylist? @relation("CreatedPlaylistEntries", fields: [createdPlaylistId], references: [id], onDelete: Cascade)
+
+  // Ensure a track can only appear once per playlist
+  @@unique([trackId, playlistHistoryId])
+  @@unique([trackId, createdPlaylistId])
+  @@index([trackId])
+  @@index([playlistHistoryId])
+  @@index([createdPlaylistId])
+  @@index([position])
+  @@map("playlist_entries")
+}
+
+// ================================
+// USER ACTIVITY TRACKING
+// ================================
+
+model ListeningHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  trackId    String
+  playedAt   DateTime
+  msPlayed   Int?     // How much was actually played
+  context    String?  // Where it was played from (playlist, album, etc.)
+  
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track      Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([trackId])
+  @@index([playedAt])
+  @@map("listening_history")
+}
