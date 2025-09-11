@@ -1,6 +1,8 @@
 import NextAuth from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
 const handler = NextAuth({
   providers: [
@@ -15,8 +17,11 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        // Add your own logic here to validate credentials
-        // For now, this is a simple example
+        
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Email and password are required')
+        }
+
         if (credentials?.email === "user@example.com" && credentials?.password === "password") {
           return {
             id: "1",
@@ -24,12 +29,45 @@ const handler = NextAuth({
             name: "Test User"
           }
         }
-        return null
+        
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          })
+
+          if (!user) {
+            throw new Error('No account found with this email address')
+          }
+
+          if (!user.password) {
+            throw new Error('This account was created with Google. Please sign in with Google.')
+          }
+
+          // Verify password
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          )
+
+          if (!isPasswordValid) {
+            throw new Error('Incorrect password')
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image || null
+          }
+        } catch (error) {
+          throw error
+        }
       }
     })
   ],
   pages: {
     signIn: '/login',
+    error: '/login',
   },
   callbacks: {
     async session({ session, token }) {

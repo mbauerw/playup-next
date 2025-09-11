@@ -1,14 +1,33 @@
 'use client'
 
 import { signIn, useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export default function LoginPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    const urlError = searchParams.get('error')
+    if (urlError) {
+      // Decode NextAuth error messages
+      const errorMessages: { [key: string]: string } = {
+        'CredentialsSignin': 'Invalid email or password',
+        'Email and password are required': 'Please fill in all fields',
+        'No account found with this email address': 'No account found with this email',
+        'Incorrect password': 'Incorrect password',
+        'This account was created with Google. Please sign in with Google.': 'Please use Google sign-in for this account'
+      }
+      
+      setError(errorMessages[urlError] || 'Sign in failed. Please try again.')
+    }
+  }, [searchParams])
 
   useEffect(() => {
     if (session) {
@@ -18,6 +37,8 @@ export default function LoginPage() {
 
   const handleCredentialsSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
+    setError('')
     
     const result = await signIn('credentials', {
       email,
@@ -27,13 +48,23 @@ export default function LoginPage() {
 
     if (result?.ok) {
       router.push('/')
-    } else {
-      alert('Invalid credentials')
+    } else if (result?.error) {
+      // Handle the error from NextAuth
+      const errorMessages: { [key: string]: string } = {
+        'CredentialsSignin': 'Invalid email or password',
+        'Email and password are required': 'Please fill in all fields',
+        'No account found with this email address': 'No account found with this email',
+        'Incorrect password': 'Incorrect password',
+        'This account was created with Google. Please sign in with Google.': 'Please use Google sign-in for this account'
+      }
+
+      setError(errorMessages[result.error] || 'Sign in failed. Please try again.')
     }
+    setLoading(false)
   }
 
   if (status === 'loading') {
-    return <div>Loading...</div>
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
   }
 
   if (session) {
@@ -48,6 +79,13 @@ export default function LoginPage() {
             Sign in to PlayUp
           </h2>
         </div>
+        
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
         
         {/* Social Login */}
         <div className="space-y-4">
@@ -71,6 +109,7 @@ export default function LoginPage() {
             className="w-full px-3 py-2 border border-gray-300 rounded text-black"
             required
           />
+          
           <input
             type="password"
             placeholder="Password"
@@ -79,16 +118,18 @@ export default function LoginPage() {
             className="w-full px-3 py-2 border border-gray-300 rounded text-black"
             required
           />
+          
           <button
             type="submit"
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            disabled={loading}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
           >
-            Sign in with Email
+            {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
 
         <div className="text-center text-sm text-gray-600">
-          Test credentials: user@example.com / password
+          Test credentials: test@example.com / password123
         </div>
       </div>
     </div>
