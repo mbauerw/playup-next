@@ -70,6 +70,48 @@ const handler = NextAuth({
     error: '/login',
   },
   callbacks: {
+    // This runs when user signs in (Google OAuth or first-time)
+    async signIn({ user, account, profile }) {
+      try {
+        if (account?.provider === 'google') {
+          // Handle Google OAuth sign-in
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email! }
+          })
+
+          if (!existingUser) {
+            // Create new user from Google data
+            const newUser = await prisma.user.create({
+              data: {
+                email: user.email!,
+                name: user.name,
+                image: user.image,
+                // Note: no password for Google users
+              }
+            })
+            
+            console.log('✅ Created new Google user:', newUser.email)
+            user.id = newUser.id // Set the ID for the session
+          } else {
+            // Update existing user with latest Google data
+            await prisma.user.update({
+              where: { id: existingUser.id },
+              data: {
+                name: user.name,
+                image: user.image,
+              }
+            })
+            
+            user.id = existingUser.id
+          }
+        }
+        
+        return true
+      } catch (error) {
+        console.error('Error in signIn callback:', error)
+        return false
+      }
+    },
     async session({ session, token }) {
       // Add user id to session
       if (session.user && token.sub) {
