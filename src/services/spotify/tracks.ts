@@ -1,5 +1,5 @@
 import { makeAuthenticatedRequest } from './index';
-import type { SavedTracks, Track, MultipleTracks } from '@/types';
+import type { SavedTracks, SpotifyTrack, MultipleTracks } from '@/types';
 
 export const spotifyTracks = {
   // Get User's Saved Tracks
@@ -40,9 +40,9 @@ export const spotifyTracks = {
     accessToken: string, 
     trackId: string, 
     market?: string
-  ): Promise<Track> {
+  ): Promise<SpotifyTrack> {
     const params = market ? `?market=${market}` : '';
-    return makeAuthenticatedRequest<Track>(
+    return makeAuthenticatedRequest<SpotifyTrack>(
       `/tracks/${trackId}${params}`, 
       accessToken
     );

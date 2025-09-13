@@ -16,17 +16,37 @@ export const useSpotifyAuth = (
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Load stored code on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedCode = localStorage.getItem('spotify_auth_code');
+      if (storedCode) {
+        setCode(storedCode);
+        console.log("Loaded stored auth code:", storedCode);
+      }
+    }
+  }, []);
+
+  // Handle URL params from Spotify redirect
   useEffect(() => {
     const authCode = searchParams.get('code');
     const authError = searchParams.get('error');
 
     if (authError) {
       setError(`Authentication failed: ${authError}`);
+      // Clean up URL
+      router.replace('/dashboard', { scroll: false });
     } else if (authCode) {
+      console.log("Auth Code received from URL:", authCode);
       setCode(authCode);
-      console.log("Auth Code is: ", authCode);
-      // Clean up URL without page reload
-      router.replace('/');
+      
+      // Store code in localStorage for persistence
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('spotify_auth_code', authCode);
+      }
+      
+      // Clean up URL
+      router.replace('/dashboard', { scroll: false });
     }
   }, [searchParams, router]);
 
@@ -37,6 +57,12 @@ export const useSpotifyAuth = (
 
       if (!process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID) {
         throw new Error('Client ID not found in environment variables');
+      }
+
+      // Clear any existing auth data
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('spotify_auth_code');
+        localStorage.removeItem('code_verifier');
       }
 
       // Generate PKCE parameters
@@ -77,6 +103,7 @@ export const useSpotifyAuth = (
     setError(null);
     if (typeof window !== 'undefined') {
       localStorage.removeItem('code_verifier');
+      localStorage.removeItem('spotify_auth_code');
     }
   }, []);
 
@@ -104,9 +131,18 @@ export const useSpotifyToken = (code: string) => {
       if (!verifier) {
         throw new Error('Code verifier not found in localStorage');
       }
+
+      if (!code) {
+        throw new Error('Authorization code not available');
+      }
   
       const result = await spotifyApi.getToken(code, verifier);
       setToken(result.access_token);
+      
+      // Clear the auth code after successful token exchange
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('spotify_auth_code');
+      }
       
       return result.access_token;
 
