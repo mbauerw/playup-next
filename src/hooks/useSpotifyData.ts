@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { spotifyApi } from '@/services/spotifyApi';
+import { spotifyApi } from '@/services/spotify';
 import type { CurrentUser, CurrentUserPlaylists, SpotifyArtist } from '@/types';
 
 export const useSpotifyProfile = (token: string | null) => {

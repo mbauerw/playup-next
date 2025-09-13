@@ -5,7 +5,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useSpotifyAuth, useSpotifyToken } from '@/hooks/useSpotifyAuth';
-import { spotifyApi } from '@/services/spotifyApi';
+import {
+  spotifyApi, 
+  makeAuthenticatedRequest, 
+  SpotifyApiError,
+  spotifyPlaylists,
+  spotifyTracks,
+  spotifyUsers,  
+  spotifyArtists
+} from '@/services/spotify';
 import type { CurrentUser, CurrentUserPlaylists, SpotifyArtist } from '@/types';
 
 export default function DashboardPage() {
@@ -50,7 +58,7 @@ export default function DashboardPage() {
 
     setLoading(true);
     try {
-      const result = await spotifyApi.getCurrentUser(token);
+      const result = await spotifyUsers.getCurrentUser(token);
       setProfile(result);
       console.log('Profile retrieved:', result);
     } catch (error) {
@@ -68,7 +76,7 @@ export default function DashboardPage() {
 
     setLoading(true);
     try {
-      const result = await spotifyApi.getCurrentUserPlaylists(token);
+      const result = await spotifyPlaylists.getCurrentUserPlaylists(token);
       setPlaylists(result);
       console.log('Playlists retrieved:', result);
     } catch (error) {
@@ -87,7 +95,7 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const artistId = "7Ln80lUS6He07XvHI8qqHH";
-      const result = await spotifyApi.getArtist(token, artistId);
+      const result = await spotifyArtists.getArtist(token, artistId);
       setArtistData(result);
       console.log('Artist data retrieved:', result);
     } catch (error) {

@@ -63,7 +63,7 @@ export default function HomePage() {
           
           <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-[800px] mx-auto">
             PlayUp automatically builds playlists based on your track history to ensure you only get the freshest tunes. 
-            Choose whether you want the classics, the deep cuts, or even all news artists in the genres you love. Let PlayUp find the songs you didn't know you wanted to hear.
+            Choose whether you want the classics, the deep cuts, or songs from all new artists in the genres you love. Let PlayUp find the songs you didn't know you wanted to hear.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

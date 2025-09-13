@@ -6,7 +6,7 @@ import type {
   SpotifyArtist
 } from '@/types';
 
-class SpotifyApiError extends Error {
+export class SpotifyApiError extends Error {
   public status?: number;
 
   constructor(message: string, status?: number) {
@@ -18,7 +18,7 @@ class SpotifyApiError extends Error {
 
 const SPOTIFY_BASE_URL = 'https://api.spotify.com/v1';
 
-const makeAuthenticatedRequest = async <T>(
+export const makeAuthenticatedRequest = async <T>(
   endpoint: string,
   accessToken: string,
   options: RequestInit = {}
@@ -68,45 +68,6 @@ export const spotifyApi = {
     return response.json();
   },
 
-  // User endpoints
-  async getCurrentUser(accessToken: string): Promise<CurrentUser> {
-    return makeAuthenticatedRequest<CurrentUser>('/me', accessToken);
-  },
-
-  async getCurrentUserPlaylists(
-    accessToken: string, 
-    params: GetPlaylistsParams = {}
-  ): Promise<CurrentUserPlaylists> {
-    const { limit = 20, offset = 0 } = params;
-    
-    const queryString = new URLSearchParams({
-      limit: limit.toString(),
-      offset: offset.toString()
-    });
-    
-    return makeAuthenticatedRequest<CurrentUserPlaylists>(
-      `/me/playlists?${queryString}`, 
-      accessToken
-    );
-  },
-
-  // Artist endpoints
-  async getArtist(accessToken: string, artistId: string): Promise<SpotifyArtist> {
-    return makeAuthenticatedRequest<SpotifyArtist>(`/artists/${artistId}`, accessToken);
-  },
-
-  // Playlist endpoints
-  async getPlaylist(accessToken: string, playlistId: string) {
-    return makeAuthenticatedRequest(`/playlists/${playlistId}`, accessToken);
-  },
-
-  async createPlaylist(accessToken: string, userId: string, data: any) {
-    return makeAuthenticatedRequest(`/users/${userId}/playlists`, accessToken, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-  },
-
   // Search endpoints
   async search(accessToken: string, query: string, type: string) {
     const queryString = new URLSearchParams({ q: query, type });
@@ -124,3 +85,9 @@ export const spotifyApi = {
     });
   }
 };
+
+// Re-export all services
+export * from './playlists';
+export * from './users';
+export * from './tracks';
+export * from './artists';

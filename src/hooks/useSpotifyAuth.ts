@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { generateRandomString, generateCodeChallenge } from '@/lib/auth';
-import { spotifyApi } from '@/services/spotifyApi';
+import { spotifyApi } from '@/services/spotify';
 import type { UsePkceAuthReturn } from '@/types';
 
 export const useSpotifyAuth = (
