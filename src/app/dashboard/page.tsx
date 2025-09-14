@@ -37,6 +37,24 @@ export default function DashboardPage() {
     }
   }, [session, status, router]);
 
+
+
+useEffect(() => {
+  console.log('Dashboard Debug Info:');
+  console.log('- code state:', code);
+  console.log('- token state:', token);
+  console.log('- authError:', authError);
+  console.log('- tokenError:', tokenError);
+  
+  // Check localStorage directly
+  if (typeof window !== 'undefined') {
+    const storedCode = localStorage.getItem('spotify_auth_code');
+    const storedVerifier = localStorage.getItem('code_verifier');
+    console.log('- localStorage auth_code:', storedCode);
+    console.log('- localStorage code_verifier:', storedVerifier);
+  }
+}, [code, token, authError, tokenError]);
+
   const handleGetToken = useCallback(async () => {
     if (!code) {
       console.log('No authorization code available');

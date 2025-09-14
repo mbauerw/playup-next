@@ -13,13 +13,14 @@ export default function CallbackPage() {
 
     if (error) {
       console.error('Spotify auth error:', error);
-      router.push(`/?error=${encodeURIComponent(error)}`);
+      router.push(`/dashboard?error=${encodeURIComponent(error)}`);
     } else if (code) {
       console.log('Spotify auth success, code:', code);
-      router.push(`/?code=${encodeURIComponent(code)}`);
+      // Redirect to dashboard with the code instead of home page
+      router.push(`/dashboard?code=${encodeURIComponent(code)}`);
     } else {
-      console.log('No code or error found, redirecting to home');
-      router.push('/');
+      console.log('No code or error found, redirecting to dashboard');
+      router.push('/dashboard');
     }
   }, [searchParams, router]);
 

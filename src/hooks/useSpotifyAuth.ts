@@ -16,28 +16,31 @@ export const useSpotifyAuth = (
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Load stored code on mount
+  // Load stored code on mount - this runs first
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedCode = localStorage.getItem('spotify_auth_code');
       if (storedCode) {
+        console.log("Loading stored auth code:", storedCode);
         setCode(storedCode);
-        console.log("Loaded stored auth code:", storedCode);
       }
     }
   }, []);
 
-  // Handle URL params from Spotify redirect
+  // Handle URL params from Spotify redirect - this runs when URL changes
   useEffect(() => {
     const authCode = searchParams.get('code');
     const authError = searchParams.get('error');
 
     if (authError) {
+      console.log("Auth error from URL:", authError);
       setError(`Authentication failed: ${authError}`);
-      // Clean up URL
-      router.replace('/dashboard', { scroll: false });
-    } else if (authCode) {
-      console.log("Auth Code received from URL:", authCode);
+      // Clean up URL but don't redirect immediately
+      const url = new URL(window.location.href);
+      url.searchParams.delete('error');
+      window.history.replaceState({}, '', url.toString());
+    } else if (authCode && authCode !== code) {
+      console.log("New auth code received from URL:", authCode);
       setCode(authCode);
       
       // Store code in localStorage for persistence
@@ -45,10 +48,13 @@ export const useSpotifyAuth = (
         localStorage.setItem('spotify_auth_code', authCode);
       }
       
-      // Clean up URL
-      router.replace('/dashboard', { scroll: false });
+      // Clean up URL params without redirecting
+      const url = new URL(window.location.href);
+      url.searchParams.delete('code');
+      url.searchParams.delete('state');
+      window.history.replaceState({}, '', url.toString());
     }
-  }, [searchParams, router]);
+  }, [searchParams, code]);
 
   const initiateAuth = useCallback(async (): Promise<void> => {
     try {
@@ -64,6 +70,7 @@ export const useSpotifyAuth = (
         localStorage.removeItem('spotify_auth_code');
         localStorage.removeItem('code_verifier');
       }
+      setCode(''); // Clear the state as well
 
       // Generate PKCE parameters
       const codeVerifier = generateRandomString(64);
@@ -87,12 +94,14 @@ export const useSpotifyAuth = (
 
       authUrl.search = new URLSearchParams(params).toString();
       
+      console.log("Redirecting to Spotify authorization...");
       // Redirect to Spotify authorization
       window.location.href = authUrl.toString();
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to initiate authentication';
       setError(errorMessage);
+      console.error('Auth initiation failed:', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -105,6 +114,7 @@ export const useSpotifyAuth = (
       localStorage.removeItem('code_verifier');
       localStorage.removeItem('spotify_auth_code');
     }
+    console.log("Auth data cleared");
   }, []);
 
   return {
@@ -122,6 +132,10 @@ export const useSpotifyToken = (code: string) => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchToken = useCallback(async (): Promise<string> => {
+    if (!code) {
+      throw new Error('Authorization code not available');
+    }
+
     setLoading(true);
     setError(null);
 
@@ -132,18 +146,17 @@ export const useSpotifyToken = (code: string) => {
         throw new Error('Code verifier not found in localStorage');
       }
 
-      if (!code) {
-        throw new Error('Authorization code not available');
-      }
-  
+      console.log('Fetching token with code:', code.substring(0, 10) + '...');
       const result = await spotifyApi.getToken(code, verifier);
       setToken(result.access_token);
       
       // Clear the auth code after successful token exchange
       if (typeof window !== 'undefined') {
         localStorage.removeItem('spotify_auth_code');
+        localStorage.removeItem('code_verifier');
       }
       
+      console.log('Token obtained successfully');
       return result.access_token;
 
     } catch (err) {
@@ -159,6 +172,7 @@ export const useSpotifyToken = (code: string) => {
   const clearToken = useCallback(() => {
     setToken(null);
     setError(null);
+    console.log("Token cleared");
   }, []);
 
   return { 
