@@ -2,7 +2,22 @@ import { makeAuthenticatedRequest } from './index';
 import type { SavedTracks, SpotifyTrack, MultipleTracks } from '@/types';
 
 export const spotifyTracks = {
-  // Get User's Saved Tracks
+  
+  // get track
+  async getTrack(
+    accessToken: string, 
+    trackId: string, 
+    market?: string
+  ): Promise<SpotifyTrack> {
+    const params = market ? `?market=${market}` : '';
+    return makeAuthenticatedRequest<SpotifyTrack>(
+      `/tracks/${trackId}${params}`, 
+      accessToken
+    );
+  },
+
+
+  // get user's saved tracks
   async getSavedTracks(
     accessToken: string,
     options?: { limit?: number; offset?: number; market?: string }
@@ -19,7 +34,7 @@ export const spotifyTracks = {
     );
   },
 
-  // Get Several Tracks
+  // get several tracks
   async getSeveralTracks(
     accessToken: string, 
     trackIds: string[],
@@ -35,16 +50,20 @@ export const spotifyTracks = {
     );
   },
 
-  // Get Track
-  async getTrack(
+  // check user's saved tracks
+  async checkUsersSavedTracks(
     accessToken: string, 
-    trackId: string, 
+    trackIds: string[],
     market?: string
-  ): Promise<SpotifyTrack> {
-    const params = market ? `?market=${market}` : '';
-    return makeAuthenticatedRequest<SpotifyTrack>(
-      `/tracks/${trackId}${params}`, 
+  ): Promise<Boolean[]> {
+    const params = new URLSearchParams();
+    params.append('ids', trackIds.join(','));
+    if (market) params.append('market', market);
+    
+    return makeAuthenticatedRequest<Boolean[]>(
+      `/tracks/contains?${params}`, 
       accessToken
     );
-  }
+  },
+
 };
