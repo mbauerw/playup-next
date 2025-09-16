@@ -15,6 +15,8 @@ import {
   spotifyArtists
 } from '@/services/spotify';
 import type { CurrentUser, CurrentUserPlaylists, SpotifyArtist } from '@/types';
+import SpotifyControlPanel from '@/components/ControlPanel';
+import BasicMenuExample from '@/components/BasicMenuExample';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -37,36 +39,21 @@ export default function DashboardPage() {
     }
   }, [session, status, router]);
 
-
-
-useEffect(() => {
-  console.log('Dashboard Debug Info:');
-  console.log('- code state:', code);
-  console.log('- token state:', token);
-  console.log('- authError:', authError);
-  console.log('- tokenError:', tokenError);
-  
-  // Check localStorage directly
-  if (typeof window !== 'undefined') {
-    const storedCode = localStorage.getItem('spotify_auth_code');
-    const storedVerifier = localStorage.getItem('code_verifier');
-    console.log('- localStorage auth_code:', storedCode);
-    console.log('- localStorage code_verifier:', storedVerifier);
-  }
-}, [code, token, authError, tokenError]);
-
-  const handleGetToken = useCallback(async () => {
-    if (!code) {
-      console.log('No authorization code available');
-      return;
-    }
+  useEffect(() => {
+    console.log('Dashboard Debug Info:');
+    console.log('- code state:', code);
+    console.log('- token state:', token);
+    console.log('- authError:', authError);
+    console.log('- tokenError:', tokenError);
     
-    try {
-      await fetchToken();
-    } catch (error) {
-      console.error('Failed to get token:', error);
+    // Check localStorage directly
+    if (typeof window !== 'undefined') {
+      const storedCode = localStorage.getItem('spotify_auth_code');
+      const storedVerifier = localStorage.getItem('code_verifier');
+      console.log('- localStorage auth_code:', storedCode);
+      console.log('- localStorage code_verifier:', storedVerifier);
     }
-  }, [code, fetchToken]);
+  }, [code, token, authError, tokenError]);
 
   const handleGetProfile = useCallback(async () => {
     if (!token) {
@@ -159,7 +146,7 @@ useEffect(() => {
                 Home
               </button>
               <button 
-                onClick={() => signOut()}
+                onClick={() => signOut({ callbackUrl: '/' })}
                 className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm"
               >
                 Sign Out
@@ -170,88 +157,26 @@ useEffect(() => {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Connection Status */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Spotify Connection Status</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${code ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-              <span className="text-sm text-gray-700">
-                Authorization: {code ? 'Connected' : 'Not connected'}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${token ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-              <span className="text-sm text-gray-700">
-                Access Token: {token ? 'Active' : 'Inactive'}
-              </span>
-            </div>
-          </div>
-          
-          {authError && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              Auth Error: {authError}
-            </div>
-          )}
-          {tokenError && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              Token Error: {tokenError}
-            </div>
-          )}
-        </div>
+        {/* Spotify Control Panel */}
+        <SpotifyControlPanel
+          code={code}
+          token={token}
+          authLoading={authLoading}
+          tokenLoading={tokenLoading}
+          loading={loading}
+          authError={authError}
+          tokenError={tokenError}
+          initiateAuth={initiateAuth}
+          fetchToken={fetchToken}
+          clearAuth={clearAuth}
+          clearToken={clearToken}
+          onGetProfile={handleGetProfile}
+          onGetPlaylists={handleGetPlaylists}
+          onGetArtistData={handleGetArtistData}
+          onClearAll={handleClearAll}
+        />
 
-        {/* Control Panel */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Spotify Actions</h2>
-          <div className="flex flex-wrap gap-3">
-            <button 
-              onClick={initiateAuth} 
-              disabled={authLoading}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-            >
-              {authLoading ? 'Connecting...' : 'Connect Spotify'}
-            </button>
-
-            <button 
-              onClick={handleGetToken} 
-              disabled={tokenLoading || !code}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-            >
-              {tokenLoading ? 'Getting Token...' : 'Get Access Token'}
-            </button>
-
-            <button 
-              onClick={handleGetProfile} 
-              disabled={loading || !token}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-            >
-              {loading ? 'Loading...' : 'Get Profile'}
-            </button>
-
-            <button 
-              onClick={handleGetPlaylists} 
-              disabled={loading || !token}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-            >
-              {loading ? 'Loading...' : 'Get Playlists'}
-            </button>
-
-            <button 
-              onClick={handleGetArtistData} 
-              disabled={loading || !token}
-              className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-            >
-              {loading ? 'Loading...' : 'Get Sample Artist'}
-            </button>
-
-            <button 
-              onClick={handleClearAll}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Clear All Data
-            </button>
-          </div>
-        </div>
+        <BasicMenuExample />
 
         {/* Data Display */}
         <div className="space-y-6">

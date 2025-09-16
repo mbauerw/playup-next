@@ -4,13 +4,14 @@
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import Logo from '@/components/Logo';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [showContent, setShowContent] = useState(false);
 
   // Redirect authenticated users to dashboard
   useEffect(() => {
@@ -19,15 +20,21 @@ export default function HomePage() {
     }
   }, [session, router]);
 
-  if (status === 'loading') {
-    return <div className="flex items-center justify-center min-h-screen bg-black text-white">Loading...</div>;
-  }
+  useEffect(() => {
+    if (status !== 'loading') {
+      setShowContent(true);
+    } else {
+      // Show content after a maximum delay even if still loading
+      const timer = setTimeout(() => setShowContent(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [status]);
 
   // Show landing page for unauthenticated users
   return (
     <div className="min-h-screen bg-black">
       {/* Navigation */}
-      <nav className="bg-gray-900/80 backdrop-blur-md border-b border-gray-800">
+      <nav className="bg-gray-900/50 backdrop-blur-md border-b border-gray-800 fixed w-full z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-2">
             <div className="flex items-center">
@@ -52,10 +59,10 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-40 pb-16">
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6">
-            Create Unique
+            Customized
             <span className="block">
               <span className="text-green-400">Spotify</span> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Playlists</span>
             </span>

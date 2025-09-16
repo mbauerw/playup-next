@@ -65,23 +65,20 @@ export const useSpotifyAuth = (
         throw new Error('Client ID not found in environment variables');
       }
 
-      // Clear any existing auth data
       if (typeof window !== 'undefined') {
         localStorage.removeItem('spotify_auth_code');
         localStorage.removeItem('code_verifier');
       }
-      setCode(''); // Clear the state as well
+      setCode(''); 
 
-      // Generate PKCE parameters
+      // PKCE parameters
       const codeVerifier = generateRandomString(64);
       const codeChallenge = await generateCodeChallenge(codeVerifier);
-
-      // Store code verifier for later use
+ 
       if (typeof window !== 'undefined') {
         localStorage.setItem('code_verifier', codeVerifier);
       }
 
-      // Build authorization URL
       const authUrl = new URL("https://accounts.spotify.com/authorize");
       const params = {
         response_type: 'code',
