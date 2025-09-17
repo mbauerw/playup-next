@@ -17,6 +17,7 @@ import {
 import type { CurrentUser, CurrentUserPlaylists, SpotifyArtist } from '@/types';
 import SpotifyControlPanel from '@/components/ControlPanel';
 import BasicMenuExample from '@/components/BasicMenuExample';
+import ApiPanel from '@/components/ApiPanel';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -176,7 +177,12 @@ export default function DashboardPage() {
           onClearAll={handleClearAll}
         />
 
-        <BasicMenuExample />
+        <ApiPanel 
+          token={token}
+          loading={loading}
+        />
+
+        {/* <BasicMenuExample /> */}
 
         {/* Data Display */}
         <div className="space-y-6">

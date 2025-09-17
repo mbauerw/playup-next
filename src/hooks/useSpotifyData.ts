@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { spotifyApi } from '@/services/spotify';
+import { spotifyApi, spotifyUsers, spotifyPlaylists, spotifyArtists, spotifyTracks } from '@/services/spotify';
 import type { CurrentUser, CurrentUserPlaylists, SpotifyArtist } from '@/types';
 
 export const useSpotifyProfile = (token: string | null) => {
@@ -19,7 +19,7 @@ export const useSpotifyProfile = (token: string | null) => {
     setError(null);
 
     try {
-      const result = await spotifyApi.getCurrentUser(token);
+      const result = await spotifyUsers.getCurrentUser(token);
       setProfile(result);
       return result;
     } catch (err) {
@@ -55,7 +55,7 @@ export const useSpotifyPlaylists = (token: string | null) => {
     setError(null);
 
     try {
-      const result = await spotifyApi.getCurrentUserPlaylists(token);
+      const result = await spotifyPlaylists.getCurrentUserPlaylists(token);
       setPlaylists(result);
       return result;
     } catch (err) {
@@ -91,7 +91,7 @@ export const useSpotifyArtist = (token: string | null) => {
     setError(null);
 
     try {
-      const result = await spotifyApi.getArtist(token, artistId);
+      const result = await spotifyArtists.getArtist(token, artistId);
       setArtist(result);
       return result;
     } catch (err) {

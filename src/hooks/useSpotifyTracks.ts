@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { spotifyTracks } from '@/services/spotify/tracks';
-import type { SavedTracks, SpotifyTrack, MultipleTracks } from '@/types';
+import type { SavedTracks, SpotifyTrack, MultipleTracks, LimitOffsetParams } from '@/types';
 
 interface UseSpotifyTracksReturn {
   // State
@@ -22,11 +22,13 @@ interface UseSpotifyTracksReturn {
 interface UseSpotifyTracksReturnTemp {
 
   singleTrack: SpotifyTrack | null;
+  savedTracks: SavedTracks | null;
   loading: boolean;
   error: string | null;
 
   // Actions
   fetchTrack: (accessToken: string, trackId: string, market?: string) => Promise<void>;
+  fetchSavedTracks: (accessToken: string, options?: { limit?: number; offset?: number; market?: string }) => Promise<void>;
   clearData: () => void;
 }
 
@@ -56,6 +58,26 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturnTemp => {
 
   }, []);
 
+  const fetchSavedTracks = useCallback(async (
+    accessToken: string,
+    options?: {
+      limit?: number,
+      offset?: number,
+      market?: string 
+    }
+  ) => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await spotifyTracks.getSavedTracks(accessToken, options);
+      setSavedTracks(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch saved tracks');
+    } finally {
+      setLoading(false);
+    }
+  },[])
+
   const clearData = useCallback(() => {
     setSavedTracks(null);
     setSingleTrack(null);
@@ -66,9 +88,11 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturnTemp => {
 
   return {
     singleTrack,
+    savedTracks,
     loading,
     error,
     fetchTrack,
+    fetchSavedTracks,
     clearData,
   };
 };
