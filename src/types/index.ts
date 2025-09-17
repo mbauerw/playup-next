@@ -10,3 +10,5 @@ export * from './artist';
 export * from './album';
 export * from './track';
 export * from './playlist';
+export * from './player';
+export * from './search';

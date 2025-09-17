@@ -7,7 +7,7 @@ import { spotifyApi } from '@/services/spotify';
 import type { UsePkceAuthReturn } from '@/types';
 
 export const useSpotifyAuth = (
-  scope: string = 'user-read-private user-read-email playlist-read-private playlist-modify-private user-library-read user-follow-read'
+  scope: string = 'user-read-private user-read-email playlist-read-private playlist-modify-private user-library-read user-follow-read user-read-recently-played'
 ): UsePkceAuthReturn => {
   const [code, setCode] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
