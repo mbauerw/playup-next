@@ -1,52 +1,12 @@
 import { useState, useCallback } from 'react';
 import { spotifyApi } from '@/services/spotify';
+import { Device, PlaybackState, RecentlyPlayedTracks } from '@/types';
 
-// Define playback state types
-interface Device {
-  id: string;
-  is_active: boolean;
-  is_private_session: boolean;
-  is_restricted: boolean;
-  name: string;
-  type: string;
-  volume_percent: number;
-  supports_volume: boolean;
-}
-
-interface PlaybackState {
-  device: Device;
-  repeat_state: string;
-  shuffle_state: boolean;
-  context: {
-    type: string;
-    href: string;
-    external_urls: {
-      spotify: string;
-    };
-    uri: string;
-  } | null;
-  timestamp: number;
-  progress_ms: number;
-  is_playing: boolean;
-  item: any; // This would be SpotifyTrack if available
-  currently_playing_type: string;
-  actions: {
-    interrupting_playback?: boolean;
-    pausing?: boolean;
-    resuming?: boolean;
-    seeking?: boolean;
-    skipping_next?: boolean;
-    skipping_prev?: boolean;
-    toggling_repeat_context?: boolean;
-    toggling_shuffle?: boolean;
-    toggling_repeat_track?: boolean;
-    transferring_playback?: boolean;
-  };
-}
 
 interface UseSpotifyPlayerReturn {
   // State
   playbackState: PlaybackState | null;
+  recentTracks: RecentlyPlayedTracks | null;
   loading: boolean;
   error: string | null;
 
@@ -72,6 +32,7 @@ interface UseSpotifyPlayerReturn {
 
 export const useSpotifyPlayer = (): UseSpotifyPlayerReturn => {
   const [playbackState, setPlaybackState] = useState<PlaybackState | null>(null);
+  const [recentTracks, setRecentTracks] = useState<RecentlyPlayedTracks | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -115,7 +76,8 @@ export const useSpotifyPlayer = (): UseSpotifyPlayerReturn => {
     setLoading(true);
     setError(null);
     try {
-      await spotifyApi.getRecentlyPlayed(accessToken, options);
+      const data = await spotifyApi.getRecentlyPlayed(accessToken, options);
+      setRecentTracks(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to get recently played');
     } finally {
@@ -317,11 +279,13 @@ export const useSpotifyPlayer = (): UseSpotifyPlayerReturn => {
 
   const clearData = useCallback(() => {
     setPlaybackState(null);
+    setRecentTracks(null);
     setError(null);
   }, []);
 
   return {
     playbackState,
+    recentTracks,
     loading,
     error,
     getCurrentPlayback,
