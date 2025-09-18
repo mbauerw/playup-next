@@ -62,7 +62,7 @@ export default function HomePage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-40 pb-16">
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6">
-            Customized
+            Uniquely Customized
             <span className="block">
               <span className="text-green-400">Spotify</span> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Playlists</span>
             </span>
@@ -78,7 +78,7 @@ export default function HomePage() {
               href="/signup"
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg"
             >
-              Start Creating Playlists
+              Make Me a Playlist
             </Link>
             <Link
               href="/login"

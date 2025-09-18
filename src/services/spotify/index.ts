@@ -102,10 +102,10 @@ export const spotifyApi = {
   ): Promise<RecentlyPlayedTracks> {
     const params = new URLSearchParams();
     if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.after) params.append('offset', options.after.toString());
-    if (options?.before) params.append('offset', options.before.toString());
+    if (options?.after) params.append('after', options.after.toString());
+    if (options?.before) params.append('before', options.before.toString());
    
-    return await makeAuthenticatedRequest(`/me/player/recently-played?${params}`, accessToken {
+    return await makeAuthenticatedRequest(`/me/player/recently-played?${params}`, accessToken, {
       method: 'GET'
     });
 
