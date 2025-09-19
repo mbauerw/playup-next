@@ -7,7 +7,7 @@ interface UseSpotifyTracksReturn {
   savedTracks: SavedTracks | null;
   singleTrack: SpotifyTrack | null;
   multipleTracks: MultipleTracks | null;
-  savedTrackStatus: boolean[] | null;
+  savedTrackStatus: Boolean[] | null;
   loading: boolean;
   error: string | null;
 
@@ -19,24 +19,11 @@ interface UseSpotifyTracksReturn {
   clearData: () => void;
 }
 
-interface UseSpotifyTracksReturnTemp {
-
-  singleTrack: SpotifyTrack | null;
-  savedTracks: SavedTracks | null;
-  loading: boolean;
-  error: string | null;
-
-  // Actions
-  fetchTrack: (accessToken: string, trackId: string, market?: string) => Promise<void>;
-  fetchSavedTracks: (accessToken: string, options?: { limit?: number; offset?: number; market?: string }) => Promise<void>;
-  clearData: () => void;
-}
-
-export const useSpotifyTracks = (): UseSpotifyTracksReturnTemp => {
+export const useSpotifyTracks = (): UseSpotifyTracksReturn => {
   const [savedTracks, setSavedTracks] = useState<SavedTracks | null>(null);
   const [singleTrack, setSingleTrack] = useState<SpotifyTrack | null>(null);
   const [multipleTracks, setMultipleTracks] = useState<MultipleTracks | null>(null);
-  const [savedTrackStatus, setSavedTrackStatus] = useState<boolean[] | null>(null);
+  const [savedTrackStatus, setSavedTrackStatus] = useState<Boolean[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +42,6 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturnTemp => {
     } finally {
       setLoading(false);
     }
-
   }, []);
 
   const fetchSavedTracks = useCallback(async (
@@ -67,7 +53,7 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturnTemp => {
     }
   ) => {
     setLoading(true);
-    setError('');
+    setError(null);
     try {
       const data = await spotifyTracks.getSavedTracks(accessToken, options);
       setSavedTracks(data);
@@ -76,7 +62,41 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturnTemp => {
     } finally {
       setLoading(false);
     }
-  },[])
+  }, []);
+
+  const fetchSeveralTracks = useCallback(async (
+    accessToken: string,
+    trackIds: string[],
+    market?: string
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await spotifyTracks.getSeveralTracks(accessToken, trackIds, market);
+      setMultipleTracks(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch several tracks');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const checkSavedStatus = useCallback(async (
+    accessToken: string,
+    trackIds: string[],
+    market?: string
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await spotifyTracks.checkUsersSavedTracks(accessToken, trackIds, market);
+      setSavedTrackStatus(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to check saved track status');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const clearData = useCallback(() => {
     setSavedTracks(null);
@@ -87,12 +107,16 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturnTemp => {
   }, []);
 
   return {
-    singleTrack,
     savedTracks,
+    singleTrack,
+    multipleTracks,
+    savedTrackStatus,
     loading,
     error,
     fetchTrack,
     fetchSavedTracks,
+    fetchSeveralTracks,
+    checkSavedStatus,
     clearData,
   };
 };

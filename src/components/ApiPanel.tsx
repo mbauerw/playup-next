@@ -5,6 +5,10 @@ import { useSpotifyTracks } from '@/hooks/useSpotifyTracks';
 import { useSpotifyPlayer } from '@/hooks/useSpotifyPlayer';
 import { useSpotifyPlaylists } from '@/hooks/useSpotifyPlaylists';
 import { SpotifyTrack, RecentlyPlayedTracks, CurrentUserPlaylists } from '@/types';
+import SavedTracksTable from './displays/SavedTracksTable';
+import RecentlyPlayedTracksTable from './displays/RecentlyPlayedTracksTable';
+import CurrentUserPlaylistsTable from './displays/CurrentUserPlaylistsTable';
+import { useSpotifyAlbums } from '@/hooks/useSpotifyAlbums';
 
 import {
   Button,
@@ -52,17 +56,22 @@ const ApiPanel = ({
 }: ApiPanelProps) => {
   const bringItHome = "https://open.spotify.com/track/1rxD34LAtkafrMUHqHIV76?si=57ae247bcacb49d4"
 
+  // tracks hooks
   const {
-    singleTrack,
     savedTracks,
+    singleTrack,
+    multipleTracks,
+    savedTrackStatus,
     loading: trackLoading,
-    error,
+    error: tracksError,
     fetchTrack,
     fetchSavedTracks,
-    clearData,
+    fetchSeveralTracks,
+    checkSavedStatus,
+    clearData: clearTracksData
   } = useSpotifyTracks();
 
-  // Add player hook for recently played tracks
+  // player hooks
   const {
     recentTracks,
     loading: playerLoading,
@@ -71,7 +80,7 @@ const ApiPanel = ({
     clearData: clearPlayerData,
   } = useSpotifyPlayer();
 
-  // Add playlists hook for current user playlists
+  // playlists hooks
   const {
     currentUserPlaylists,
     loading: playlistsLoading,
@@ -79,6 +88,16 @@ const ApiPanel = ({
     fetchCurrentUserPlaylists,
     clearData: clearPlaylistsData,
   } = useSpotifyPlaylists();
+
+  // album hooks
+  const {
+    albumTracks,
+    loading: albumsLoading,
+    error: albumsError,
+    fetchAlbumTracks,
+    clearData: clearAlbumsData,
+  } = useSpotifyAlbums();
+
 
   const [trackId, setTrackId] = useState('1rxD34LAtkafrMUHqHIV76');
   const [market, setMarket] = useState('US');
@@ -88,16 +107,24 @@ const ApiPanel = ({
   const [savedTracksOffset, setSavedTracksOffset] = useState(0);
   const [savedTracksDialogOpen, setSavedTracksDialogOpen] = useState(false);
 
-  // Recently played tracks parameters
+  // recently played tracks params
   const [recentTracksLimit, setRecentTracksLimit] = useState(10);
   const [recentTracksAfter, setRecentTracksAfter] = useState<string>('');
   const [recentTracksBefore, setRecentTracksBefore] = useState<string>('');
   const [recentTracksDialogOpen, setRecentTracksDialogOpen] = useState(false);
 
-  // Current user playlists parameters
+  // current user playlists params
   const [playlistsLimit, setPlaylistsLimit] = useState(20);
   const [playlistsOffset, setPlaylistsOffset] = useState(0);
   const [playlistsDialogOpen, setPlaylistsDialogOpen] = useState(false);
+
+  // album params
+  const ledZeppelinII = "58MQ0PLijVHePUonQlK76Y";
+  const [albumId, setAlbumId] = useState('58MQ0PLijVHePUonQlK76Y'); // Example album ID
+  const [albumTracksLimit, setAlbumTracksLimit] = useState(20);
+  const [albumTracksOffset, setAlbumTracksOffset] = useState(0);
+  const [albumTracksMarket, setAlbumTracksMarket] = useState('US');
+  const [albumTracksDialogOpen, setAlbumTracksDialogOpen] = useState(false);
 
   // menu anchors
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -139,9 +166,9 @@ const ApiPanel = ({
       alert('Please enter an access token');
       return;
     }
-    fetchSavedTracks(token, { 
-      limit: savedTracksLimit, 
-      offset: savedTracksOffset 
+    fetchSavedTracks(token, {
+      limit: savedTracksLimit,
+      offset: savedTracksOffset
     });
     setSavedTracksDialogOpen(false);
   };
@@ -162,7 +189,7 @@ const ApiPanel = ({
       return;
     }
 
-    const options: {limit?: number, after?: number, before?: number} = {
+    const options: { limit?: number, after?: number, before?: number } = {
       limit: recentTracksLimit
     };
 
@@ -200,18 +227,67 @@ const ApiPanel = ({
       alert('Please enter an access token');
       return;
     }
-    fetchCurrentUserPlaylists(token, { 
-      limit: playlistsLimit, 
-      offset: playlistsOffset 
+    fetchCurrentUserPlaylists(token, {
+      limit: playlistsLimit,
+      offset: playlistsOffset
     });
     setPlaylistsDialogOpen(false);
   };
 
+  // album handlers
+  const handleOpenAlbumTracksDialog = () => {
+    handleClose(); // Close the menu first
+    setAlbumTracksDialogOpen(true);
+  };
+
+  const handleCloseAlbumTracksDialog = () => {
+    setAlbumTracksDialogOpen(false);
+  };
+
+  const handleGetAlbumTracks = async () => {
+    if (!token) {
+      alert('Please enter an access token');
+      return;
+    }
+
+    try {
+      // First fetch the album tracks
+      await fetchAlbumTracks(token, albumId, {
+        limit: albumTracksLimit,
+        offset: albumTracksOffset,
+        market: albumTracksMarket || undefined
+      });
+
+      // The albumTracks will be available after the fetch completes
+      // We'll handle the second API call in a useEffect
+    } catch (error) {
+      console.error('Failed to fetch album tracks:', error);
+    }
+
+    setAlbumTracksDialogOpen(false);
+  };
+
+
   const onClearAll = () => {
-    clearData();
     clearPlayerData();
     clearPlaylistsData();
+    clearAlbumsData();
+    clearTracksData(); // Add this line
   }
+
+  useEffect(() => {
+    if (albumTracks && albumTracks.items.length > 0 && token) {
+      // Extract track IDs from album tracks
+      const trackIds = albumTracks.items
+        .filter(track => track.id) // Filter out any tracks without IDs
+        .map(track => track.id);
+
+      if (trackIds.length > 0) {
+        // Fetch full track details with popularity
+        fetchSeveralTracks(token, trackIds, albumTracksMarket || undefined);
+      }
+    }
+  }, [albumTracks, token, fetchSeveralTracks, albumTracksMarket]);
 
   return (
     <div className="flex flex-wrap gap-3">
@@ -259,7 +335,7 @@ const ApiPanel = ({
       >
         Open Menu
       </Button>
-      
+
       <Menu
         id="basic-menu"
         anchorEl={anchorEl}
@@ -278,11 +354,8 @@ const ApiPanel = ({
         <MenuItem onClick={handleOpenPlaylistsDialog}>
           Get Current User Playlists
         </MenuItem>
-        <MenuItem onClick={() => handleMenuItemClick('My account')}>
-          My account
-        </MenuItem>
-        <MenuItem onClick={() => handleMenuItemClick('Logout')}>
-          Logout
+        <MenuItem onClick={handleOpenAlbumTracksDialog}>
+          Get Album Tracks
         </MenuItem>
       </Menu>
 
@@ -394,72 +467,81 @@ const ApiPanel = ({
           </Button>
         </DialogActions>
       </Dialog>
-      
+
+      {/* Album Tracks Parameters Dialog */}
+      <Dialog open={albumTracksDialogOpen} onClose={handleCloseAlbumTracksDialog}>
+        <DialogTitle>Fetch Album Tracks</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              label="Album ID"
+              type="text"
+              value={albumId}
+              onChange={(e) => setAlbumId(e.target.value)}
+              helperText="Spotify album ID"
+              fullWidth
+            />
+            <TextField
+              label="Limit"
+              type="number"
+              value={albumTracksLimit}
+              onChange={(e) => setAlbumTracksLimit(Math.max(1, Math.min(50, parseInt(e.target.value) || 1)))}
+              helperText="Number of tracks to fetch (1-50)"
+              inputProps={{ min: 1, max: 50 }}
+              fullWidth
+            />
+            <TextField
+              label="Offset"
+              type="number"
+              value={albumTracksOffset}
+              onChange={(e) => setAlbumTracksOffset(Math.max(0, parseInt(e.target.value) || 0))}
+              helperText="Starting position (0 = first track)"
+              inputProps={{ min: 0 }}
+              fullWidth
+            />
+            <TextField
+              label="Market"
+              type="text"
+              value={albumTracksMarket}
+              onChange={(e) => setAlbumTracksMarket(e.target.value)}
+              helperText="Market code (e.g., US, GB) - optional"
+              fullWidth
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAlbumTracksDialog}>Cancel</Button>
+          <Button onClick={handleGetAlbumTracks} variant="contained" disabled={!token}>
+            Fetch Album Tracks
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {savedTracks && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b">
-            <h3 className="text-xl font-bold text-gray-900">
-              Your Saved Tracks ({savedTracks.total} total)
-            </h3>
-            <p className="text-sm text-gray-500">
-              Showing {savedTracks.items.length} tracks (offset: {savedTracks.offset})
-            </p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Track</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artist</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Album</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {savedTracks.items.map((savedTrack, index) => (
-                  <tr key={savedTrack.track.id || index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {savedTrack.track.album.images?.[2] && (
-                          <img
-                            src={savedTrack.track.album.images[2].url}
-                            alt={savedTrack.track.album.name}
-                            className="w-10 h-10 rounded mr-3"
-                          />
-                        )}
-                        <div className="font-medium text-gray-900">{savedTrack.track.name}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {savedTrack.track.artists.map(artist => artist.name).join(', ')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {savedTrack.track.album.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {Math.floor(savedTrack.track.duration_ms / 60000)}:{((savedTrack.track.duration_ms % 60000) / 1000).toFixed(0).padStart(2, '0')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(savedTrack.added_at).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <SavedTracksTable savedTracks={savedTracks} />
+
       )}
 
       {/* Recently Played Tracks Display */}
       {recentTracks && (
+        <RecentlyPlayedTracksTable recentTracks={recentTracks} />
+      )}
+
+      {/* Current User Playlists Display */}
+      {currentUserPlaylists && (
+        <CurrentUserPlaylistsTable currentUserPlaylists={currentUserPlaylists} />
+      )}
+
+      {/* Album Tracks Display - Enhanced with full track data */}
+      {albumTracks && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b">
             <h3 className="text-xl font-bold text-gray-900">
-              Recently Played Tracks ({recentTracks.total} total)
+              Album Tracks ({albumTracks.total} total)
             </h3>
             <p className="text-sm text-gray-500">
-              Showing {recentTracks.items.length} tracks
+              Showing {albumTracks.items.length} tracks (offset: {albumTracks.offset})
+              {multipleTracks && <span> - Enhanced with popularity data</span>}
             </p>
           </div>
           <div className="overflow-x-auto">
@@ -468,120 +550,53 @@ const ApiPanel = ({
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Track</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artist</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Album</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Played At</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Context</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Track #</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disc #</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Popularity</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Explicit</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {recentTracks.items.map((playHistory, index) => (
-                  <tr key={`${playHistory.track.id}-${playHistory.played_at}-${index}`} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {playHistory.track.album.images?.[2] && (
-                          <img
-                            src={playHistory.track.album.images[2].url}
-                            alt={playHistory.track.album.name}
-                            className="w-10 h-10 rounded mr-3"
-                          />
-                        )}
-                        <div className="font-medium text-gray-900">{playHistory.track.name}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {playHistory.track.artists.map(artist => artist.name).join(', ')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {playHistory.track.album.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {Math.floor(playHistory.track.duration_ms / 60000)}:{((playHistory.track.duration_ms % 60000) / 1000).toFixed(0).padStart(2, '0')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(playHistory.played_at).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {playHistory.context ? playHistory.context.type : 'No context'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+                {albumTracks.items.map((track, index) => {
+                  // Find the corresponding full track data
+                  const fullTrack = multipleTracks?.tracks.find(t => t?.id === track.id);
 
-      {/* Current User Playlists Display */}
-      {currentUserPlaylists && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b">
-            <h3 className="text-xl font-bold text-gray-900">
-              Your Playlists ({currentUserPlaylists.total} total)
-            </h3>
-            <p className="text-sm text-gray-500">
-              Showing {currentUserPlaylists.items.length} playlists (offset: {currentUserPlaylists.offset})
-            </p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Playlist</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tracks</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Public</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Collaborative</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {currentUserPlaylists.items.map((playlist, index) => (
-                  <tr key={playlist.id || index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {playlist.images?.[0] && (
-                          <img
-                            src={playlist.images[0].url}
-                            alt={playlist.name}
-                            className="w-10 h-10 rounded mr-3"
-                          />
+                  return (
+                    <tr key={track.id || index} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="font-medium text-gray-900">{track.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {track.artists.map(artist => artist.name).join(', ')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {Math.floor(track.duration_ms / 60000)}:{((track.duration_ms % 60000) / 1000).toFixed(0).padStart(2, '0')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {track.track_number}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {track.disc_number}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {fullTrack?.popularity !== undefined ? (
+                          <span className="font-medium">{fullTrack.popularity}/100</span>
+                        ) : (
+                          <span className="text-gray-400">Loading...</span>
                         )}
-                        <div>
-                          <div className="font-medium text-gray-900">{playlist.name}</div>
-                          <div className="text-sm text-gray-500">{playlist.id}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {playlist.owner.display_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {playlist.tracks.total}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        playlist.public 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {playlist.public ? 'Public' : 'Private'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        playlist.collaborative 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {playlist.collaborative ? 'Yes' : 'No'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                      {playlist.description || 'No description'}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${track.explicit
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-green-100 text-green-800'
+                          }`}>
+                          {track.explicit ? 'Explicit' : 'Clean'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -596,10 +611,10 @@ const ApiPanel = ({
       </button>
 
       {/* Display any errors */}
-      {(error || playerError || playlistsError) && (
+      {(tracksError || playerError || playlistsError || albumsError) && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4">
           <p className="font-medium">Error:</p>
-          <p>{error || playerError || playlistsError}</p>
+          <p>{tracksError || playerError || playlistsError || albumsError}</p>
         </div>
       )}
     </div>

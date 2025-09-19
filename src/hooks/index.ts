@@ -6,6 +6,7 @@ export { useSpotifyTracks } from './useSpotifyTracks';
 export { useSpotifyPlaylists } from './useSpotifyPlaylists';
 export { useSpotifySearch } from './useSpotifySearch';
 export { useSpotifyPlayer } from './useSpotifyPlayer';
+export { useSpotifyAlbums } from './useSpotifyAlbums';
 
 // Re-export legacy hooks for backward compatibility
 export { 
