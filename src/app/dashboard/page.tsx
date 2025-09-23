@@ -128,21 +128,21 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-800">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b">
+      <nav className="bg-gray-500 shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold text-gray-900">PlayUp Dashboard</h1>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-900">
                 Welcome, {session.user?.name || session.user?.email}
               </span>
             </div>
             <div className="flex items-center space-x-4">
               <button 
                 onClick={() => router.push('/')}
-                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                className="text-gray-900 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
               >
                 Home
               </button>

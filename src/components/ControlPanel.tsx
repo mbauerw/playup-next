@@ -57,7 +57,7 @@ export default function ControlPanel({
   }, [code, fetchToken]);
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-8">
+    <div className="bg-gray-400 rounded-lg shadow p-6 mb-8">
       <h2 className="text-xl font-semibold text-gray-900 mb-4">Spotify Actions</h2>
       
       {/* Connection Status */}

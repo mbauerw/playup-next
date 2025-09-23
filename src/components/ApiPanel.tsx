@@ -4,12 +4,13 @@ import { useCallback, useState, useEffect, MouseEvent } from 'react';
 import { useSpotifyTracks } from '@/hooks/useSpotifyTracks';
 import { useSpotifyPlayer } from '@/hooks/useSpotifyPlayer';
 import { useSpotifyPlaylists } from '@/hooks/useSpotifyPlaylists';
-import { SpotifyTrack, RecentlyPlayedTracks, CurrentUserPlaylists } from '@/types';
+import { SpotifyTrack, RecentlyPlayedTracks, CurrentUserPlaylists, MultipleTracks } from '@/types';
 import SavedTracksTable from './displays/SavedTracksTable';
 import RecentlyPlayedTracksTable from './displays/RecentlyPlayedTracksTable';
 import CurrentUserPlaylistsTable from './displays/CurrentUserPlaylistsTable';
 import { useSpotifyAlbums } from '@/hooks/useSpotifyAlbums';
-import {Spotify} from 'react-spotify-embed';
+import { Spotify } from 'react-spotify-embed';
+import parseAlbumTracks, { getAlbumIds, rankSongPopularity } from '@/lib/analysis/parsers/parseAlbumTracks';
 
 import {
   Button,
@@ -126,6 +127,10 @@ const ApiPanel = ({
   const [albumTracksOffset, setAlbumTracksOffset] = useState(0);
   const [albumTracksMarket, setAlbumTracksMarket] = useState('US');
   const [albumTracksDialogOpen, setAlbumTracksDialogOpen] = useState(false);
+  const [sortedAlbumTracks, setSortedAlbumTracks] = useState<MultipleTracks>();
+
+  // spotify widget player params
+  const [playerLink, setPlayerLink] = useState("5ihDGnhQgMA0F0tk9fNLlA?")
 
   // menu anchors
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -268,6 +273,9 @@ const ApiPanel = ({
     setAlbumTracksDialogOpen(false);
   };
 
+  const handleChangeTrack = (track: string) => {
+    setPlayerLink(track);
+  }
 
   const onClearAll = () => {
     clearPlayerData();
@@ -278,17 +286,22 @@ const ApiPanel = ({
 
   useEffect(() => {
     if (albumTracks && albumTracks.items.length > 0 && token) {
-      // Extract track IDs from album tracks
-      const trackIds = albumTracks.items
-        .filter(track => track.id) // Filter out any tracks without IDs
-        .map(track => track.id);
+
+      const trackIds = getAlbumIds(albumTracks);
 
       if (trackIds.length > 0) {
-        // Fetch full track details with popularity
         fetchSeveralTracks(token, trackIds, albumTracksMarket || undefined);
       }
     }
   }, [albumTracks, token, fetchSeveralTracks, albumTracksMarket]);
+
+  useEffect(() => {
+    if (multipleTracks) {
+      const sortedTracks = rankSongPopularity(multipleTracks);
+      setSortedAlbumTracks(sortedTracks);
+
+    }
+  }, [multipleTracks, fetchSeveralTracks])
 
   return (
     <div className='flex flex-col gap-10'>
@@ -302,26 +315,30 @@ const ApiPanel = ({
         </button>
 
         {singleTrack && (
-          <div className='bg-gray-50 rounded-lg p-4 mt-4'>
-            <h3 className='text-lg font-semibold mb-3'>Track Information</h3>
+          <div className='bg-gray-800 rounded-lg p-4 mt-4 border border-gray-700'>
+            <h3 className='text-lg font-semibold mb-3 text-gray-100'>Track Information</h3>
             <div className='space-y-2'>
-              <div>
-                <span className='font-medium'>Track:</span> {singleTrack.name}
+              <div className='text-gray-300'>
+                <span className='font-medium text-gray-100'>Track:</span> {singleTrack.name}
               </div>
               <div>
-                <span className='font-medium'>Artists:</span> {singleTrack.artists.map(artist => artist.name).join(', ')}
+                <button className='bg-green-500 shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75
+                border border-solid border-gray-600 rounded-md px-2 text-gray-900 font-medium' onClick={() => handleChangeTrack(singleTrack.id)}>Play</button>
               </div>
-              <div>
-                <span className='font-medium'>Album:</span> {singleTrack.album.name}
+              <div className='text-gray-300'>
+                <span className='font-medium text-gray-100'>Artists:</span> {singleTrack.artists.map(artist => artist.name).join(', ')}
               </div>
-              <div>
-                <span className='font-medium'>Release Date:</span> {singleTrack.album.release_date}
+              <div className='text-gray-300'>
+                <span className='font-medium text-gray-100'>Album:</span> {singleTrack.album.name}
               </div>
-              <div>
-                <span className='font-medium'>Popularity:</span> {singleTrack.popularity}/100
+              <div className='text-gray-300'>
+                <span className='font-medium text-gray-100'>Release Date:</span> {singleTrack.album.release_date}
               </div>
-              <div>
-                <span className='font-medium'>Duration:</span> {Math.floor(singleTrack.duration_ms / 60000)}:{((singleTrack.duration_ms % 60000) / 1000).toFixed(0).padStart(2, '0')}
+              <div className='text-gray-300'>
+                <span className='font-medium text-gray-100'>Popularity:</span> {singleTrack.popularity}/100
+              </div>
+              <div className='text-gray-300'>
+                <span className='font-medium text-gray-100'>Duration:</span> {Math.floor(singleTrack.duration_ms / 60000)}:{((singleTrack.duration_ms % 60000) / 1000).toFixed(0).padStart(2, '0')}
               </div>
             </div>
           </div>
@@ -521,7 +538,6 @@ const ApiPanel = ({
 
         {savedTracks && (
           <SavedTracksTable savedTracks={savedTracks} />
-
         )}
 
         {/* Recently Played Tracks Display */}
@@ -536,62 +552,67 @@ const ApiPanel = ({
 
         {/* Album Tracks Display - Enhanced with full track data */}
         {albumTracks && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b">
-              <h3 className="text-xl font-bold text-gray-900">
+          <div className="bg-gray-800 rounded-lg shadow-xl overflow-hidden border border-gray-700">
+            <div className="px-6 py-4 border-b border-gray-700">
+              <h3 className="text-xl font-bold text-gray-100">
                 Album Tracks ({albumTracks.total} total)
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-400">
                 Showing {albumTracks.items.length} tracks (offset: {albumTracks.offset})
                 {multipleTracks && <span> - Enhanced with popularity data</span>}
               </p>
             </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-700">
+                <thead className="bg-gray-900">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Track</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artist</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Track #</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disc #</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Popularity</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Explicit</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Track</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Play</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Artist</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Duration</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Track #</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Disc #</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Popularity</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Explicit</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-gray-800 divide-y divide-gray-700">
                   {albumTracks.items.map((track, index) => {
-                    // Find the corresponding full track data
                     const fullTrack = multipleTracks?.tracks.find(t => t?.id === track.id);
-
                     return (
-                      <tr key={track.id || index} className="hover:bg-gray-50">
+                      <tr key={track.id || index} className="hover:bg-gray-700">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-medium text-gray-900">{track.name}</div>
+                          <div className="font-medium text-gray-100">{track.name}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <button className='bg-green-500 shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75
+                              border border-solid border-gray-600 rounded-md px-2 text-gray-900 font-medium' onClick={() => handleChangeTrack(track.id)}>Play</button>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                           {track.artists.map(artist => artist.name).join(', ')}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                           {Math.floor(track.duration_ms / 60000)}:{((track.duration_ms % 60000) / 1000).toFixed(0).padStart(2, '0')}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                           {track.track_number}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                           {track.disc_number}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                           {fullTrack?.popularity !== undefined ? (
                             <span className="font-medium">{fullTrack.popularity}/100</span>
                           ) : (
-                            <span className="text-gray-400">Loading...</span>
+                            <span className="text-gray-500">Loading...</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${track.explicit
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-green-100 text-green-800'
+                            ? 'bg-red-900 text-red-200'
+                            : 'bg-green-900 text-green-200'
                             }`}>
                             {track.explicit ? 'Explicit' : 'Clean'}
                           </span>
@@ -599,6 +620,74 @@ const ApiPanel = ({
                       </tr>
                     );
                   })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Sorted Album Tracks Display */}
+        {sortedAlbumTracks && (
+          <div className="bg-gray-800 rounded-lg shadow-xl overflow-hidden mt-6 border border-gray-700">
+            <div className="px-6 py-4 border-b border-gray-700">
+              <h3 className="text-xl font-bold text-gray-100">
+                Tracks Sorted by Popularity ({sortedAlbumTracks.tracks.filter(t => t !== null).length} tracks)
+              </h3>
+              <p className="text-sm text-gray-400">
+                Ranked from most to least popular
+              </p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-700">
+                <thead className="bg-gray-900">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Rank</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Track</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Play</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Artist</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Duration</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Popularity</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Explicit</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-gray-800 divide-y divide-gray-700">
+                  {sortedAlbumTracks.tracks
+                    .filter(track => track !== null)
+                    .map((track, index) => (
+                      <tr key={track!.id || index} className="hover:bg-gray-700">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="font-bold text-gray-100">#{index + 1}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="font-medium text-gray-100">{track!.name}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button
+                            className='bg-green-500 shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 border border-solid border-gray-600 rounded-md px-2 text-gray-900 font-medium'
+                            onClick={() => handleChangeTrack(track!.id)}
+                          >
+                            Play
+                          </button>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                          {track!.artists.map(artist => artist.name).join(', ')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                          {Math.floor(track!.duration_ms / 60000)}:{((track!.duration_ms % 60000) / 1000).toFixed(0).padStart(2, '0')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                          <span className="font-medium">{track!.popularity}/100</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${track!.explicit
+                            ? 'bg-red-900 text-red-200'
+                            : 'bg-green-900 text-green-200'
+                            }`}>
+                            {track!.explicit ? 'Explicit' : 'Clean'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -614,13 +703,13 @@ const ApiPanel = ({
 
         {/* Display any errors */}
         {(tracksError || playerError || playlistsError || albumsError) && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4">
+          <div className="bg-red-900 border border-red-600 text-red-200 px-4 py-3 rounded mt-4">
             <p className="font-medium">Error:</p>
             <p>{tracksError || playerError || playlistsError || albumsError}</p>
           </div>
         )}
       </div>
-      <Spotify link="https://open.spotify.com/track/5ihDGnhQgMA0F0tk9fNLlA?si=4472348a63dd4f83" />
+      <Spotify link={`https://open.spotify.com/track/${playerLink}`} />
     </div>
   )
 }
