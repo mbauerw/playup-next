@@ -23,8 +23,11 @@ export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   
-  // Auth state
+  // NEW Auth state
   const { isAuthenticated, isLoading: authLoading, error: authError, getAccessToken } = useSpotifyAuth();
+
+  // Old Auth State
+  // 
 
   // Data state
   const [profile, setProfile] = useState<CurrentUser | null>(null);
@@ -63,7 +66,6 @@ export default function DashboardPage() {
       console.log('No token available for playlists');
       return;
     }
-    // const { isAuthenticated, isLoading: authLoading, error: authError, getAccessToken } = useSpotifyAuth();
 
     setLoading(true);
     try {
