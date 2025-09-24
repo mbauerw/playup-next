@@ -126,6 +126,14 @@ export default function LoginPage() {
             {isRegistering ? 'Sign up' : 'Sign in'} with Google
           </button>
         </div>
+        <div className="space-y-4">
+          <button
+            onClick={() => signIn('spotify')}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            {isRegistering ? 'Sign up' : 'Sign in'} with Spotify
+          </button>
+        </div>
 
         <div className="text-center text-gray-500">or</div>
 

@@ -27,7 +27,7 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        
+
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password are required')
         }
@@ -39,7 +39,7 @@ const handler = NextAuth({
             name: "Test User"
           }
         }
-        
+
         try {
           const user = await prisma.user.findUnique({
             where: { email: credentials.email }
@@ -88,7 +88,7 @@ const handler = NextAuth({
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email! }
           })
-  
+
           if (!existingUser) {
             // Create new user with Spotify data
             const newUser = await prisma.user.create({
@@ -135,7 +135,7 @@ const handler = NextAuth({
                 // Note: no password for Google users
               }
             })
-            
+
             console.log('✅ Created new Google user:', newUser.email)
             user.id = newUser.id // Set the ID for the session
           } else {
@@ -147,11 +147,11 @@ const handler = NextAuth({
                 image: user.image,
               }
             })
-            
+
             user.id = existingUser.id
           }
         }
-        
+
         return true
       } catch (error) {
         console.error('Error in signIn callback:', error)
@@ -163,8 +163,8 @@ const handler = NextAuth({
       if (session.user && token.sub) {
         session.user.id = token.sub
         // Optionally add Spotify token info to session
-      session.spotifyAccessToken = token.spotifyAccessToken as string
-      session.spotifyTokenExpires = token.spotifyTokenExpires as number
+        session.spotifyAccessToken = token.spotifyAccessToken as string
+        session.spotifyTokenExpires = token.spotifyTokenExpires as number
       }
       return session
     },

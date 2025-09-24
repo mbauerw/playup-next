@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useSpotifyAuth, useSpotifyToken } from '@/hooks/useSpotifyAuth';
+import { useSpotifyAuth} from '@/hooks/useSpotifyAuth';
 import {
   spotifyApi, 
   makeAuthenticatedRequest, 
@@ -24,8 +24,7 @@ export default function DashboardPage() {
   const router = useRouter();
   
   // Auth state
-  const { code, isLoading: authLoading, error: authError, initiateAuth, clearAuth } = useSpotifyAuth();
-  const { token, loading: tokenLoading, error: tokenError, fetchToken, clearToken } = useSpotifyToken(code);
+  const { isAuthenticated, isLoading: authLoading, error: authError, getAccessToken } = useSpotifyAuth();
 
   // Data state
   const [profile, setProfile] = useState<CurrentUser | null>(null);
@@ -40,21 +39,6 @@ export default function DashboardPage() {
     }
   }, [session, status, router]);
 
-  useEffect(() => {
-    console.log('Dashboard Debug Info:');
-    console.log('- code state:', code);
-    console.log('- token state:', token);
-    console.log('- authError:', authError);
-    console.log('- tokenError:', tokenError);
-    
-    // Check localStorage directly
-    if (typeof window !== 'undefined') {
-      const storedCode = localStorage.getItem('spotify_auth_code');
-      const storedVerifier = localStorage.getItem('code_verifier');
-      console.log('- localStorage auth_code:', storedCode);
-      console.log('- localStorage code_verifier:', storedVerifier);
-    }
-  }, [code, token, authError, tokenError]);
 
   const handleGetProfile = useCallback(async () => {
     if (!token) {
@@ -79,6 +63,7 @@ export default function DashboardPage() {
       console.log('No token available for playlists');
       return;
     }
+    // const { isAuthenticated, isLoading: authLoading, error: authError, getAccessToken } = useSpotifyAuth();
 
     setLoading(true);
     try {
