@@ -3,7 +3,8 @@ import type {
   SpotifyPlaylist, 
   PlaylistItems, 
   CurrentUserPlaylists,
-  CreatePlaylistData
+  CreatePlaylistData,
+  RemovePlaylistItemsData
 } from '@/types';
 
 export const spotifyPlaylists = {
@@ -38,6 +39,18 @@ export const spotifyPlaylists = {
     return makeAuthenticatedRequest(`/playlists/${playlistId}/tracks`, accessToken, {
       method: 'POST',
       body: JSON.stringify({ uris: trackUris })
+    });
+  },
+
+  // Remove Items from Playlist
+  async removeItemsFromPlaylist(
+    accessToken: string, 
+    playlistId: string, 
+    data: RemovePlaylistItemsData
+  ): Promise<{ snapshot_id: string }> {
+    return makeAuthenticatedRequest(`/playlists/${playlistId}/tracks`, accessToken, {
+      method: 'DELETE',
+      body: JSON.stringify(data)
     });
   },
 
@@ -85,4 +98,5 @@ export const spotifyPlaylists = {
       accessToken
     );
   }
+
 };

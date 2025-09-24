@@ -3,6 +3,8 @@ import { JWT } from "next-auth/jwt"
 
 declare module "next-auth" {
   interface Session {
+    spotifyAccessToken?: string
+    spotifyTokenExpires?: number
     user: {
       id: string
     } & DefaultSession["user"]

@@ -1,6 +1,6 @@
-import type { 
-  CurrentUser, 
-  CurrentUserPlaylists, 
+import type {
+  CurrentUser,
+  CurrentUserPlaylists,
   LimitOffsetParams,
   SpotifyTokenResponse,
   SearchResults,
@@ -77,6 +77,29 @@ export const spotifyApi = {
     return makeAuthenticatedRequest<SearchResults>(`/search?${queryString}`, accessToken);
   },
 
+  // Search endpoints - Enhanced search with all parameters
+  async searchAdvanced(
+    accessToken: string,
+    query: string,
+    type: string,
+    options?: {
+      market?: string;
+      limit?: number;
+      offset?: number;
+      include_external?: 'audio';
+    }
+  ): Promise<SearchResults> {
+    const params = new URLSearchParams();
+    params.append('q', query);
+    params.append('type', type);
+    if (options?.market) params.append('market', options.market);
+    if (options?.limit) params.append('limit', options.limit.toString());
+    if (options?.offset) params.append('offset', options.offset.toString());
+    if (options?.include_external) params.append('include_external', options.include_external);
+
+    return makeAuthenticatedRequest<SearchResults>(`/search?${params}`, accessToken);
+  },
+
   // Player endpoints - NOW PROPERLY TYPED
   async getCurrentPlayback(accessToken: string, market?: string): Promise<PlaybackState | null> {
     const params = market ? `?market=${market}` : '';
@@ -98,13 +121,13 @@ export const spotifyApi = {
     });
   },
 
-  async getRecentlyPlayed(accessToken: string, options?: {limit?: number, after?: number, before?: number}
+  async getRecentlyPlayed(accessToken: string, options?: { limit?: number, after?: number, before?: number }
   ): Promise<RecentlyPlayedTracks> {
     const params = new URLSearchParams();
     if (options?.limit) params.append('limit', options.limit.toString());
     if (options?.after) params.append('after', options.after.toString());
     if (options?.before) params.append('before', options.before.toString());
-   
+
     return await makeAuthenticatedRequest(`/me/player/recently-played?${params}`, accessToken, {
       method: 'GET'
     });

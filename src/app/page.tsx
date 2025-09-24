@@ -62,15 +62,15 @@ export default function HomePage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-40 pb-16">
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6">
-            Uniquely Customized
+            Always Fresh
             <span className="block">
               <span className="text-green-400">Spotify</span> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Playlists</span>
             </span>
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-[800px] mx-auto">
-            PlayUp automatically builds playlists based on your track history to ensure you only get the freshest tunes. 
-            Choose whether you want the classics, the deep cuts, or songs from all new artists in the genres you love. Let PlayUp find the songs you didn't know you wanted to hear.
+            PlayUp automatically finds songs based on your track history to ensure you only get the freshest tunes. 
+            Drop a playlist to get new songs from your favorite artists or choose a genre and let PlayUp do the rest. Let PlayUp find the songs you didn't know you wanted to hear.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

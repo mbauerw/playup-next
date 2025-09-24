@@ -83,3 +83,13 @@ export interface SavedAlbums {
   total: number;
   items: SavedAlbum[];
 }
+
+export interface ArtistAlbums {
+  href: string;
+  limit: number;
+  next: string | null;
+  offset: number;
+  previous: string | null;
+  total: number;
+  items: SpotifyAlbum[];
+}

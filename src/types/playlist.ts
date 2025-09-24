@@ -1,6 +1,6 @@
 import { SpotifyExternalUrls, SpotifyImage } from './common';
 import { SpotifyUser } from './user';
-import { SpotifyTrack, PlaylistTrack } from './track';
+import { SpotifyTrack, PlaylistTrack, SpotifyPlaylistTracks } from './track';
 
 export interface SpotifyPlaylistOwner {
   external_urls: SpotifyExternalUrls;
@@ -11,17 +11,11 @@ export interface SpotifyPlaylistOwner {
   display_name: string;
 }
 
-export interface SpotifyPlaylistTracks {
-  href: string;
-  total: number;
-}
 
 export interface SpotifyPlaylist {
   collaborative: boolean;
   description: string | null;
-  external_urls: {
-    spotify: string;
-  };
+  external_urls: SpotifyExternalUrls;
   href: string;
   id: string;
   images: SpotifyImage[];
@@ -30,10 +24,7 @@ export interface SpotifyPlaylist {
   primary_color: string | null;
   public: boolean;
   snapshot_id: string;
-  tracks: {
-    href: string;
-    total: number;
-  };
+  tracks: SpotifyPlaylistTracks;
   type: 'playlist';
   uri: string;
 }
@@ -67,4 +58,13 @@ export interface CreatePlaylistData {
   name: string;
   description: string;
   public: boolean;
+}
+
+export interface RemovePlaylistItemsData {
+  tracks: [
+        {
+            uri: string
+        }
+    ],
+    snapshot_id: string
 }

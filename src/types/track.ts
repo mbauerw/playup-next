@@ -57,6 +57,11 @@ export interface PlaylistTrack {
   track: SpotifyTrack;
 }
 
+export interface SpotifyPlaylistTracks {
+  href: string;
+  total: number;
+}
+
 export interface UserTopItems {
   href: string;
   limit: number;
