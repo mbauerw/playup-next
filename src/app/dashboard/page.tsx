@@ -1,10 +1,9 @@
-// src/app/dashboard/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useSpotifyAuth} from '@/hooks/useSpotifyAuth';
+import { useSpotifyAuth } from '@/hooks/useSpotifyAuth';
 import {
   spotifyApi, 
   makeAuthenticatedRequest, 
@@ -23,17 +22,15 @@ export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   
-  // NEW Auth state
+  // Auth state - using NEW auth system
   const { isAuthenticated, isLoading: authLoading, error: authError, getAccessToken } = useSpotifyAuth();
-
-  // Old Auth State
-  // 
 
   // Data state
   const [profile, setProfile] = useState<CurrentUser | null>(null);
   const [playlists, setPlaylists] = useState<CurrentUserPlaylists | null>(null);
   const [artistData, setArtistData] = useState<SpotifyArtist | null>(null);
   const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
 
   // Redirect unauthenticated users
   useEffect(() => {
@@ -42,6 +39,20 @@ export default function DashboardPage() {
     }
   }, [session, status, router]);
 
+  // Get access token when authenticated
+  useEffect(() => {
+    const fetchToken = async () => {
+      if (isAuthenticated && !token) {
+        try {
+          const accessToken = await getAccessToken();
+          setToken(accessToken);
+        } catch (error) {
+          console.error('Failed to get access token:', error);
+        }
+      }
+    };
+    fetchToken();
+  }, [isAuthenticated, token, getAccessToken]);
 
   const handleGetProfile = useCallback(async () => {
     if (!token) {
@@ -99,12 +110,32 @@ export default function DashboardPage() {
   }, [token]);
 
   const handleClearAll = useCallback(() => {
-    clearAuth();
-    clearToken();
     setProfile(null);
     setPlaylists(null);
     setArtistData(null);
-  }, [clearAuth, clearToken]);
+    setToken(null);
+  }, []);
+
+  // Mock functions for compatibility with old ControlPanel
+  const mockInitiateAuth = useCallback(async () => {
+    // This is handled by NextAuth now, so redirect to sign in
+    router.push('/login');
+  }, [router]);
+
+  const mockFetchToken = useCallback(async () => {
+    if (token) return token;
+    const accessToken = await getAccessToken();
+    setToken(accessToken);
+    return accessToken;
+  }, [token, getAccessToken]);
+
+  const mockClearAuth = useCallback(() => {
+    setToken(null);
+  }, []);
+
+  const mockClearToken = useCallback(() => {
+    setToken(null);
+  }, []);
 
   if (status === 'loading') {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -145,19 +176,19 @@ export default function DashboardPage() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Spotify Control Panel */}
+        {/* Updated Control Panel - now uses mock functions but real token */}
         <SpotifyControlPanel
-          code={code}
+          code={""} // No longer needed
           token={token}
           authLoading={authLoading}
-          tokenLoading={tokenLoading}
+          tokenLoading={false} // Token is fetched automatically
           loading={loading}
           authError={authError}
-          tokenError={tokenError}
-          initiateAuth={initiateAuth}
-          fetchToken={fetchToken}
-          clearAuth={clearAuth}
-          clearToken={clearToken}
+          tokenError={null} // Error handling is in authError now
+          initiateAuth={mockInitiateAuth}
+          fetchToken={mockFetchToken}
+          clearAuth={mockClearAuth}
+          clearToken={mockClearToken}
           onGetProfile={handleGetProfile}
           onGetPlaylists={handleGetPlaylists}
           onGetArtistData={handleGetArtistData}
@@ -168,8 +199,6 @@ export default function DashboardPage() {
           token={token}
           loading={loading}
         />
-
-        {/* <BasicMenuExample /> */}
 
         {/* Data Display */}
         <div className="space-y-6">

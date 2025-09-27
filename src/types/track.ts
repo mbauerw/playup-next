@@ -32,8 +32,9 @@ export interface SpotifyTrack {
 }
 
 export interface MultipleTracks {
-  tracks: (SpotifyTrack | null)[];
+  tracks: SpotifyTrack[];
 }
+
 
 export interface SavedTrack {
   added_at: string;

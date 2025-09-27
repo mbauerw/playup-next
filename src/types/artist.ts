@@ -13,6 +13,14 @@ export interface SpotifyArtist {
   uri: string;
 }
 
+export interface MultipleTrackArtists {
+  artists: SpotifyArtist[][];
+}
+
+export interface PlaylistArtists {
+  artists: SpotifyArtist[][];
+}
+
 export interface FollowedArtistsData {
   href: string;
   limit: number;

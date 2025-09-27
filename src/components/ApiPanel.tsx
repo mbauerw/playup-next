@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState, useEffect, MouseEvent } from 'react';
+import { useSpotifyAuth } from '@/hooks/useSpotifyAuth';
 import { useSpotifyTracks } from '@/hooks/useSpotifyTracks';
 import { useSpotifyPlayer } from '@/hooks/useSpotifyPlayer';
 import { useSpotifyPlaylists } from '@/hooks/useSpotifyPlaylists';
@@ -41,7 +42,7 @@ import {
 } from '@mui/icons-material';
 
 interface ApiPanelProps {
-  // auth state
+  // auth state - token is passed from parent now
   token: string | null;
   loading: boolean;
 }
@@ -59,6 +60,9 @@ const ApiPanel = ({
   loading
 }: ApiPanelProps) => {
   const bringItHome = "https://open.spotify.com/track/1rxD34LAtkafrMUHqHIV76?si=57ae247bcacb49d4"
+
+  // Get access to the auth system for token refresh if needed
+  const { getAccessToken } = useSpotifyAuth();
 
   // tracks hooks
   const {
@@ -102,7 +106,6 @@ const ApiPanel = ({
     clearData: clearAlbumsData,
   } = useSpotifyAlbums();
 
-
   const [trackId, setTrackId] = useState('1rxD34LAtkafrMUHqHIV76');
   const [market, setMarket] = useState('US');
 
@@ -138,6 +141,15 @@ const ApiPanel = ({
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open: boolean = Boolean(anchorEl);
 
+  // Helper function to get fresh token if needed
+  const getFreshToken = useCallback(async (): Promise<string> => {
+    if (!token) {
+      const freshToken = await getAccessToken();
+      return freshToken;
+    }
+    return token;
+  }, [token, getAccessToken]);
+
   const handleClick = (event: MouseEvent<HTMLButtonElement>): void => {
     setAnchorEl(event.currentTarget);
   };
@@ -152,12 +164,13 @@ const ApiPanel = ({
   };
 
   // track api
-  const handleFetchSingleTrack = () => {
-    if (!token) {
-      alert('Please enter an access token');
-      return;
+  const handleFetchSingleTrack = async () => {
+    try {
+      const currentToken = await getFreshToken();
+      fetchTrack(currentToken, trackId, market || undefined);
+    } catch (error) {
+      console.error('Failed to get token for track fetch:', error);
     }
-    fetchTrack(token, trackId, market || undefined);
   };
 
   const handleOpenSavedTracksDialog = () => {
@@ -169,16 +182,17 @@ const ApiPanel = ({
     setSavedTracksDialogOpen(false);
   };
 
-  const handleGetSavedTracks = () => {
-    if (!token) {
-      alert('Please enter an access token');
-      return;
+  const handleGetSavedTracks = async () => {
+    try {
+      const currentToken = await getFreshToken();
+      fetchSavedTracks(currentToken, {
+        limit: savedTracksLimit,
+        offset: savedTracksOffset
+      });
+      setSavedTracksDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to get token for saved tracks:', error);
     }
-    fetchSavedTracks(token, {
-      limit: savedTracksLimit,
-      offset: savedTracksOffset
-    });
-    setSavedTracksDialogOpen(false);
   };
 
   // Recently played tracks handlers
@@ -191,33 +205,34 @@ const ApiPanel = ({
     setRecentTracksDialogOpen(false);
   };
 
-  const handleGetRecentTracks = () => {
-    if (!token) {
-      alert('Please enter an access token');
-      return;
-    }
+  const handleGetRecentTracks = async () => {
+    try {
+      const currentToken = await getFreshToken();
 
-    const options: { limit?: number, after?: number, before?: number } = {
-      limit: recentTracksLimit
-    };
+      const options: { limit?: number, after?: number, before?: number } = {
+        limit: recentTracksLimit
+      };
 
-    // Convert timestamp strings to numbers if provided
-    if (recentTracksAfter.trim()) {
-      const afterTimestamp = parseInt(recentTracksAfter.trim());
-      if (!isNaN(afterTimestamp)) {
-        options.after = afterTimestamp;
+      // Convert timestamp strings to numbers if provided
+      if (recentTracksAfter.trim()) {
+        const afterTimestamp = parseInt(recentTracksAfter.trim());
+        if (!isNaN(afterTimestamp)) {
+          options.after = afterTimestamp;
+        }
       }
-    }
 
-    if (recentTracksBefore.trim()) {
-      const beforeTimestamp = parseInt(recentTracksBefore.trim());
-      if (!isNaN(beforeTimestamp)) {
-        options.before = beforeTimestamp;
+      if (recentTracksBefore.trim()) {
+        const beforeTimestamp = parseInt(recentTracksBefore.trim());
+        if (!isNaN(beforeTimestamp)) {
+          options.before = beforeTimestamp;
+        }
       }
-    }
 
-    fetchRecentlyPlayed(token, options);
-    setRecentTracksDialogOpen(false);
+      fetchRecentlyPlayed(currentToken, options);
+      setRecentTracksDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to get token for recent tracks:', error);
+    }
   };
 
   // Current user playlists handlers
@@ -230,16 +245,17 @@ const ApiPanel = ({
     setPlaylistsDialogOpen(false);
   };
 
-  const handleGetCurrentUserPlaylists = () => {
-    if (!token) {
-      alert('Please enter an access token');
-      return;
+  const handleGetCurrentUserPlaylists = async () => {
+    try {
+      const currentToken = await getFreshToken();
+      fetchCurrentUserPlaylists(currentToken, {
+        limit: playlistsLimit,
+        offset: playlistsOffset
+      });
+      setPlaylistsDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to get token for playlists:', error);
     }
-    fetchCurrentUserPlaylists(token, {
-      limit: playlistsLimit,
-      offset: playlistsOffset
-    });
-    setPlaylistsDialogOpen(false);
   };
 
   // album handlers
@@ -253,14 +269,11 @@ const ApiPanel = ({
   };
 
   const handleGetAlbumTracks = async () => {
-    if (!token) {
-      alert('Please enter an access token');
-      return;
-    }
-
     try {
+      const currentToken = await getFreshToken();
+
       // First fetch the album tracks
-      await fetchAlbumTracks(token, albumId, {
+      await fetchAlbumTracks(currentToken, albumId, {
         limit: albumTracksLimit,
         offset: albumTracksOffset,
         market: albumTracksMarket || undefined
@@ -287,23 +300,30 @@ const ApiPanel = ({
   }
 
   useEffect(() => {
-    if (albumTracks && albumTracks.items.length > 0 && token) {
+    const fetchSeveralTracksWithToken = async () => {
+      if (albumTracks && albumTracks.items.length > 0) {
+        try {
+          const currentToken = await getFreshToken();
+          const trackIds = getAlbumIds(albumTracks);
 
-      const trackIds = getAlbumIds(albumTracks);
-
-      if (trackIds.length > 0) {
-        fetchSeveralTracks(token, trackIds, albumTracksMarket || undefined);
+          if (trackIds.length > 0) {
+            fetchSeveralTracks(currentToken, trackIds, albumTracksMarket || undefined);
+          }
+        } catch (error) {
+          console.error('Failed to fetch several tracks:', error);
+        }
       }
-    }
-  }, [albumTracks, token, fetchSeveralTracks, albumTracksMarket]);
+    };
+
+    fetchSeveralTracksWithToken();
+  }, [albumTracks, getFreshToken, fetchSeveralTracks, albumTracksMarket]);
 
   useEffect(() => {
     if (multipleTracks) {
       const sortedTracks = rankSongPopularity(multipleTracks);
       setSortedAlbumTracks(sortedTracks);
-
     }
-  }, [multipleTracks, fetchSeveralTracks])
+  }, [multipleTracks])
 
   return (
     <div className='flex flex-col gap-10'>
@@ -380,6 +400,7 @@ const ApiPanel = ({
           </MenuItem>
         </Menu>
 
+        {/* All the dialog components remain the same */}
         {/* Saved Tracks Parameters Dialog */}
         <Dialog open={savedTracksDialogOpen} onClose={handleCloseSavedTracksDialog}>
           <DialogTitle>Fetch Saved Tracks</DialogTitle>
