@@ -12,8 +12,8 @@ const handler = NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     SpotifyProvider({
-      clientId: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!,
-      clientSecret: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET!,
+      clientId: process.env.SPOTIFY_CLIENT_ID!,
+      clientSecret: process.env.SPOTIFY_CLIENT_SECRET!,
       authorization: {
         params: {
           scope: 'user-read-private user-read-email playlist-read-private playlist-modify-private user-library-read user-follow-read user-read-recently-played'

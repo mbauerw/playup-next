@@ -50,10 +50,10 @@ export const spotifyApi = {
   // Authentication
   async getToken(code: string, verifier: string): Promise<SpotifyTokenResponse> {
     const params = new URLSearchParams();
-    params.append("client_id", process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!);
+    params.append("client_id", process.env.SPOTIFY_CLIENT_ID!);
     params.append("grant_type", "authorization_code");
     params.append("code", code);
-    params.append("redirect_uri", process.env.NEXT_PUBLIC_REDIRECT_URI!);
+    params.append("redirect_uri", process.env.REDIRECT_URI!);
     params.append("code_verifier", verifier);
 
     const response = await fetch(`https://accounts.spotify.com/api/token`, {
