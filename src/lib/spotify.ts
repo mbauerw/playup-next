@@ -15,7 +15,8 @@ export async function refreshSpotifyToken(userId: string) {
   if (!user?.spotifyRefreshToken) {
     throw new Error('No refresh token available')
   }
-
+  console.log("Got Prisma User");
+  console.log("User: " + user.spotifyRefreshToken);
 
   const response = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',

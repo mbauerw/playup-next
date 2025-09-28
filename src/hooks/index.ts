@@ -1,5 +1,5 @@
 // Export all Spotify-related hooks
-export { useSpotifyAuth, useSpotifyToken } from './useSpotifyAuth';
+export { useSpotifyAuth} from './useSpotifyAuth';
 export { useSpotifyUsers } from './useSpotifyUsers';
 export { useSpotifyArtists } from './useSpotifyArtists';
 export { useSpotifyTracks } from './useSpotifyTracks';

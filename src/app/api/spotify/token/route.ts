@@ -20,6 +20,8 @@ export async function GET() {
       }
     });
 
+    console.log("Got User");
+
     if (!user?.spotifyRefreshToken) {
       return NextResponse.json(
         { error: 'No Spotify account linked' }, 
@@ -37,6 +39,7 @@ export async function GET() {
 
     // Refresh the token
     const {accessToken, expiresAt} = await refreshSpotifyToken(session.user.id);
+    console.log("Token refreshed");
 
     return NextResponse.json({
       access_token: accessToken,
