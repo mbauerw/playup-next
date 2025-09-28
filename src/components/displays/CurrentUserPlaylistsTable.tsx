@@ -1,11 +1,30 @@
-import React from 'react';
-import { CurrentUserPlaylists } from '@/types';
+import React, {useState} from 'react';
+import { CurrentUserPlaylists, SpotifyPlaylist, MultipleTracks } from '@/types';
+import SortedAlbumTracksTable from './SortedAlbumTracksTable';
 
 interface CurrentUserPlaylistsTableProps {
   currentUserPlaylists: CurrentUserPlaylists;
+  token: string | null;
+  handleChangeTrack: (trackId: string) => void;
+  getPlaylistTracks?: (playlist: SpotifyPlaylist | string, token: string, options?: {limit?: number, offset?: number}) => Promise<MultipleTracks>;
+  rankPlaylistTracks?: (playlist: SpotifyPlaylist | string, token: string, options?: {limit?: number, offset?: number}) => Promise<MultipleTracks>;
 }
 
-const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ currentUserPlaylists }) => {
+const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ currentUserPlaylists, token, handleChangeTrack, getPlaylistTracks, rankPlaylistTracks }) => {
+
+  const [playlistTracks, setPlaylistTracks] = useState<MultipleTracks>();
+
+  const handleGetPlaylistTracks = async (playlist: SpotifyPlaylist, token: string | null) => {
+    if (getPlaylistTracks && token) {
+      try {
+        const tracks = await getPlaylistTracks(playlist, token);
+        setPlaylistTracks(tracks);
+        console.log(tracks);
+      } catch (error) {
+        console.error('Error fetching playlist tracks:', error);
+      }
+    }
+  };
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b">
@@ -65,6 +84,11 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
                   {playlist.tracks.total}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <div>
+                    <button className='bg-blue-600 hover:bg-blue-800 border-1 border-black' onClick={() => handleGetPlaylistTracks(playlist, token)}> Get Playlist Tracks</button>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                     playlist.public 
                       ? 'bg-green-100 text-green-800' 
@@ -89,6 +113,12 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
             ))}
           </tbody>
         </table>
+      </div>
+      <div>
+        {playlistTracks &&
+          <SortedAlbumTracksTable sortedAlbumTracks={playlistTracks} handleChangeTrack={handleChangeTrack} />
+        }
+        
       </div>
     </div>
   );

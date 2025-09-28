@@ -14,6 +14,7 @@ import SortedAlbumTracksTable from './displays/SortedAlbumTracksTable';
 import { useSpotifyAlbums } from '@/hooks/useSpotifyAlbums';
 import { Spotify } from 'react-spotify-embed';
 import parseAlbumTracks, { getAlbumIds, rankSongPopularity } from '@/lib/analysis/parsers/parseAlbumTracks';
+import { getPlaylistArtists, getPlaylistTracks, rankPlaylistTracks } from '@/lib/analysis/parsers/parseSpotifyPlaylist';
 
 import {
   Button,
@@ -570,7 +571,7 @@ const ApiPanel = ({
 
         {/* Current User Playlists Display */}
         {currentUserPlaylists && (
-          <CurrentUserPlaylistsTable currentUserPlaylists={currentUserPlaylists} />
+          <CurrentUserPlaylistsTable currentUserPlaylists={currentUserPlaylists} token={token} handleChangeTrack={handleChangeTrack} getPlaylistTracks={getPlaylistTracks}  />
         )}
 
         {/* Album Tracks Display - Enhanced with full track data */}
