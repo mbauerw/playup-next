@@ -6,7 +6,7 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'PlayUp - Unique Spotify Playlists',
+  title: 'ReGroove - Unique Spotify Playlists',
   description: 'A Spotify integration app to create unique and customizable playlists. Built with Next.js',
 };
 

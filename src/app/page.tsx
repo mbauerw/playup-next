@@ -1,4 +1,3 @@
-// src/app/page.tsx
 'use client';
 
 import { useSession } from 'next-auth/react';
@@ -13,27 +12,21 @@ export default function HomePage() {
   const router = useRouter();
   const [showContent, setShowContent] = useState(false);
 
-  // Redirect authenticated users to dashboard
-  useEffect(() => {
-    if (session) {
-      router.push('/dashboard');
-    }
-  }, [session, router]);
 
   useEffect(() => {
     if (status !== 'loading') {
       setShowContent(true);
     } else {
-      // Show content after a maximum delay even if still loading
+
       const timer = setTimeout(() => setShowContent(true), 1000);
       return () => clearTimeout(timer);
     }
   }, [status]);
 
-  // Show landing page for unauthenticated users
+
   return (
     <div className="min-h-screen bg-black">
-      {/* Navigation */}
+      {/* nav */}
       <nav className="bg-gray-900/50 backdrop-blur-md border-b border-gray-800 fixed w-full z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-2">
@@ -41,24 +34,35 @@ export default function HomePage() {
               <Logo />
             </div>
             <div className="flex space-x-4">
-              <Link
-                href="/login"
-                className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/signup"
-                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Get Started
-              </Link>
+              {session ? (
+                <Link
+                  href="/dashboard"
+                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* hero */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-40 pb-16">
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6">
@@ -69,27 +73,38 @@ export default function HomePage() {
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-[800px] mx-auto">
-            PlayUp automatically finds songs based on your track history to ensure you only get the freshest tunes. 
-            Drop a playlist to get new songs from your favorite artists or choose a genre and let PlayUp do the rest. Let PlayUp find the songs you didn't know you wanted to hear.
+            ReGroove automatically finds songs based on your track history to ensure you only get the freshest tunes. 
+            Drop a playlist to get new songs from your favorite artists or choose a genre and let ReGroove do the rest. Let ReGroove find the songs you didn't know you wanted to hear.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/signup"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg"
-            >
-              Make Me a Playlist
-            </Link>
-            <Link
-              href="/login"
-              className="bg-gray-800/80 hover:bg-gray-700/80 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors backdrop-blur-sm border border-gray-700"
-            >
-              Sign In
-            </Link>
+            {session ? (
+              <Link
+                href="/dashboard"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg"
+              >
+                Make Me a Playlist
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/signup"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg"
+                >
+                  Make Me a Playlist
+                </Link>
+                <Link
+                  href="/login"
+                  className="bg-gray-800/80 hover:bg-gray-700/80 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors backdrop-blur-sm border border-gray-700"
+                >
+                  Sign In
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Features Section */}
+        {/* features */}
         <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="bg-gray-900/60 backdrop-blur-md rounded-lg p-6 border border-gray-800">
             <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
@@ -131,7 +146,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* How it Works Section */}
+        {/* description */}
         <div className="mt-20">
           <h2 className="text-3xl font-bold text-white text-center mb-12">How It Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -169,22 +184,31 @@ export default function HomePage() {
         <div className="mt-20 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to Get Started?</h2>
           <p className="text-xl text-gray-300 mb-8">
-            Join thousands of music lovers creating unique playlists with PlayUp
+            Join thousands of music lovers creating unique playlists with ReGroove
           </p>
-          <Link
-            href="/signup"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg"
-          >
-            Create Your First Playlist
-          </Link>
+          {session ? (
+            <Link
+              href="/dashboard"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg"
+            >
+              Create Your First Playlist
+            </Link>
+          ) : (
+            <Link
+              href="/signup"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg"
+            >
+              Create Your First Playlist
+            </Link>
+          )}
         </div>
       </main>
 
-      {/* Footer */}
+      {/* footer */}
       <footer className="bg-gray-900/50 backdrop-blur-sm border-t border-gray-800 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-gray-400">
-            <p>&copy; 2025 PlayUp. All rights reserved.</p>
+            <p>&copy; 2025 ReGroove. All rights reserved.</p>
             <p className="mt-2 text-sm">
               This application uses the Spotify Web API but is not endorsed, certified or otherwise approved by Spotify.
             </p>

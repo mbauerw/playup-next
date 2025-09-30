@@ -107,7 +107,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold">
-            {isRegistering ? 'Create Account' : 'Sign in to PlayUp'}
+            {isRegistering ? 'Create Account' : 'Sign in to ReGroove'}
           </h2>
         </div>
 
