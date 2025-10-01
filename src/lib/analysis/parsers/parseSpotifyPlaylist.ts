@@ -1,13 +1,12 @@
-import { SpotifyPlaylist, SpotifyArtist, SpotifyAlbum, SpotifyTrack, MultipleTracks, PlaylistItems, PlaylistTrack, PlaylistArtists } from "@/types";
+import { SpotifyPlaylist, SpotifyArtist, SpotifyAlbum, SpotifyTrack, MultipleTracks, PlaylistItems, PlaylistTrack, PlaylistArtists, PlaylistTopArtists } from "@/types";
 import { spotifyPlaylists } from "@/services/spotify";
 import { rankSongPopularity } from "./parseAlbumTracks";
 
 
-// Get id from play. fetchPlaylistItems
 export const getPlaylistTracks = async (
-  playlist: SpotifyPlaylist | string, 
-  token: string, 
-  options?: {limit?: number, offset?: number}
+  playlist: SpotifyPlaylist | string,
+  token: string,
+  options?: { limit?: number, offset?: number }
 ): Promise<MultipleTracks> => {
   const playlistId = typeof playlist === 'string' ? playlist : playlist.id;
   const items = await spotifyPlaylists.getPlaylistItems(token, playlistId, options);
@@ -15,20 +14,57 @@ export const getPlaylistTracks = async (
   const tracks = items.items
     .map(playlistTrack => playlistTrack.track)
     .filter(track => track !== null && track !== undefined); // Filter out nulls
-  
+
   return { tracks };
 }
 
 export const getPlaylistArtists = (tracks: MultipleTracks): PlaylistArtists => {
   const artists = tracks.tracks
-    .filter(track => track !== null) // Add null check
-    .map(spotifyTrack => spotifyTrack!.artists);
-  
-  return { artists };
+    .filter(track => track !== null)
+    .map(spotifyTrack => spotifyTrack!.artists)
+    .sort((a, b) => a[0].name.localeCompare(b[0].name));
+
+  const counts = new Map<string, number>();
+
+  artists.forEach(artistArray => {
+    const primary = artistArray[0];
+    counts.set(
+      primary.id,
+      (counts.get(primary.id) || 0) + 1
+    );
+  })
+
+  return { artists, counts };
 }
 
+export const getPlaylistTopArtists = (
+  playlistArtists: PlaylistArtists, 
+  limit: number
+): PlaylistTopArtists => {
 
-export const rankPlaylistTracks = async (playlist : SpotifyPlaylist, token: string, options?: {limit?: number, offset?: number}): Promise<MultipleTracks> => {
+  const sortedEntries = Array.from(playlistArtists.counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit);
+
+  const topCounts = new Map(sortedEntries);
+  
+  const topArtists = sortedEntries
+    .map(([artistId]) => {
+      const artistArray = playlistArtists.artists.find(
+        arr => arr[0]?.id === artistId
+      );
+      return artistArray?.[0]; 
+    })
+    .filter((artist): artist is SpotifyArtist => artist !== undefined);
+
+  return {
+    artists: topArtists,
+    counts: topCounts
+  };
+};
+
+
+export const rankPlaylistTracks = async (playlist: SpotifyPlaylist, token: string, options?: { limit?: number, offset?: number }): Promise<MultipleTracks> => {
   const tracks = await getPlaylistTracks(playlist, token, options);
   const rankedTracks = rankSongPopularity(tracks);
   return rankedTracks;

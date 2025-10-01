@@ -1,23 +1,42 @@
 import { useState, useCallback } from 'react';
 import { spotifyArtists } from '@/services/spotify/artists';
-import type { SpotifyArtist } from '@/types';
+import type { SpotifyArtist, ArtistAlbums, MultipleTracks } from '@/types';
 
 interface UseSpotifyArtistsReturn {
   // State
   artist: SpotifyArtist | null;
   artists: SpotifyArtist[] | null;
+  artistAlbums: ArtistAlbums | null;
+  artistTopTracks: MultipleTracks | null;
   loading: boolean;
   error: string | null;
 
   // Actions
   fetchArtist: (accessToken: string, artistId: string) => Promise<void>;
   fetchSeveralArtists: (accessToken: string, artistIds: string[]) => Promise<void>;
+  fetchArtistAlbums: (
+    accessToken: string,
+    artistId: string,
+    options?: {
+      include_groups?: string;
+      market?: string;
+      limit?: number;
+      offset?: number;
+    }
+  ) => Promise<void>;
+  fetchArtistTopTracks: (
+    accessToken: string,
+    artistId: string,
+    market?: string
+  ) => Promise<void>;
   clearData: () => void;
 }
 
 export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
   const [artist, setArtist] = useState<SpotifyArtist | null>(null);
   const [artists, setArtists] = useState<SpotifyArtist[] | null>(null);
+  const [artistAlbums, setArtistAlbums] = useState<ArtistAlbums | null>(null);
+  const [artistTopTracks, setArtistTopTracks] = useState<MultipleTracks | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,19 +73,64 @@ export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
     }
   }, []);
 
+  const fetchArtistAlbums = useCallback(async (
+    accessToken: string,
+    artistId: string,
+    options?: {
+      include_groups?: string;
+      market?: string;
+      limit?: number;
+      offset?: number;
+    }
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await spotifyArtists.getArtistAlbums(accessToken, artistId, options);
+      setArtistAlbums(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch artist albums');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchArtistTopTracks = useCallback(async (
+    accessToken: string,
+    artistId: string,
+    market?: string
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await spotifyArtists.getArtistTopTracks(accessToken, artistId, market);
+      setArtistTopTracks(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch artist top tracks');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const clearData = useCallback(() => {
     setArtist(null);
     setArtists(null);
+    setArtistAlbums(null);
+    setArtistTopTracks(null);
     setError(null);
   }, []);
 
   return {
     artist,
     artists,
+    artistAlbums,
+    artistTopTracks,
     loading,
     error,
     fetchArtist,
     fetchSeveralArtists,
+    fetchArtistAlbums,
+    fetchArtistTopTracks,
     clearData,
   };
 };

@@ -1,7 +1,6 @@
-// jest.config.js
 module.exports = {
   preset: 'ts-jest',
-  testEnvironment: 'node', // Change from 'jsdom' to 'node'
+  testEnvironment: 'jsdom', // Change this
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   moduleNameMapper: {

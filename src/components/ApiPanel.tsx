@@ -5,16 +5,17 @@ import { useSpotifyAuth } from '@/hooks/useSpotifyAuth';
 import { useSpotifyTracks } from '@/hooks/useSpotifyTracks';
 import { useSpotifyPlayer } from '@/hooks/useSpotifyPlayer';
 import { useSpotifyPlaylists } from '@/hooks/useSpotifyPlaylists';
+import { useSpotifyAlbums } from '@/hooks/useSpotifyAlbums';
+import { useSpotifyArtists } from '@/hooks';
 import { SpotifyTrack, RecentlyPlayedTracks, CurrentUserPlaylists, MultipleTracks } from '@/types';
 import SavedTracksTable from './displays/SavedTracksTable';
 import RecentlyPlayedTracksTable from './displays/RecentlyPlayedTracksTable';
 import CurrentUserPlaylistsTable from './displays/CurrentUserPlaylistsTable';
 import AlbumTracksTable from './displays/AlbumTracksTable';
 import SortedAlbumTracksTable from './displays/SortedAlbumTracksTable';
-import { useSpotifyAlbums } from '@/hooks/useSpotifyAlbums';
 import { Spotify } from 'react-spotify-embed';
 import parseAlbumTracks, { getAlbumIds, rankSongPopularity } from '@/lib/analysis/parsers/parseAlbumTracks';
-import { getPlaylistArtists, getPlaylistTracks, rankPlaylistTracks } from '@/lib/analysis/parsers/parseSpotifyPlaylist';
+import { getPlaylistArtists, getPlaylistTopArtists, getPlaylistTracks, rankPlaylistTracks } from '@/lib/analysis/parsers/parseSpotifyPlaylist';
 
 import {
   Button,
@@ -107,10 +108,24 @@ const ApiPanel = ({
     clearData: clearAlbumsData,
   } = useSpotifyAlbums();
 
+  // artist hooks
+  const {artist,
+    artists,
+    artistAlbums,
+    artistTopTracks,
+    loading: artistLoading,
+    error: artistError,
+    fetchArtist,
+    fetchSeveralArtists,
+    fetchArtistAlbums,
+    fetchArtistTopTracks,
+    clearData: clearArtistData,
+  } = useSpotifyArtists();
+
   const [trackId, setTrackId] = useState('1rxD34LAtkafrMUHqHIV76');
   const [market, setMarket] = useState('US');
 
-  // Saved tracks parameters
+  // saved tracks parameters
   const [savedTracksLimit, setSavedTracksLimit] = useState(5);
   const [savedTracksOffset, setSavedTracksOffset] = useState(0);
   const [savedTracksDialogOpen, setSavedTracksDialogOpen] = useState(false);
@@ -125,6 +140,7 @@ const ApiPanel = ({
   const [playlistsLimit, setPlaylistsLimit] = useState(20);
   const [playlistsOffset, setPlaylistsOffset] = useState(0);
   const [playlistsDialogOpen, setPlaylistsDialogOpen] = useState(false);
+
 
   // album params
   const ledZeppelinII = "58MQ0PLijVHePUonQlK76Y";
@@ -259,6 +275,19 @@ const ApiPanel = ({
     }
   };
 
+
+  const handleFetchArtistTopTracks = async (artistId: string, market?: string) : Promise<MultipleTracks | null> => {
+    try {
+      const currentToken = await getFreshToken();
+      await fetchArtistTopTracks(currentToken, artistId, market);
+      return artistTopTracks;
+    }
+    catch (error) {
+      console.error('Could not get the top trackies: ', error);
+      return null;
+    } 
+  }
+
   // album handlers
   const handleOpenAlbumTracksDialog = () => {
     handleClose(); // Close the menu first
@@ -273,15 +302,13 @@ const ApiPanel = ({
     try {
       const currentToken = await getFreshToken();
 
-      // First fetch the album tracks
       await fetchAlbumTracks(currentToken, albumId, {
         limit: albumTracksLimit,
         offset: albumTracksOffset,
         market: albumTracksMarket || undefined
       });
 
-      // The albumTracks will be available after the fetch completes
-      // We'll handle the second API call in a useEffect
+
     } catch (error) {
       console.error('Failed to fetch album tracks:', error);
     }
@@ -571,7 +598,13 @@ const ApiPanel = ({
 
         {/* Current User Playlists Display */}
         {currentUserPlaylists && (
-          <CurrentUserPlaylistsTable currentUserPlaylists={currentUserPlaylists} token={token} handleChangeTrack={handleChangeTrack} getPlaylistTracks={getPlaylistTracks}  />
+          <CurrentUserPlaylistsTable 
+            currentUserPlaylists={currentUserPlaylists} 
+            token={token} 
+            handleChangeTrack={handleChangeTrack} 
+            getPlaylistTracks={getPlaylistTracks}
+            getPlaylistArtists={getPlaylistArtists}
+            handleFetchArtistTopTracks={handleFetchArtistTopTracks}  />
         )}
 
         {/* Album Tracks Display - Enhanced with full track data */}

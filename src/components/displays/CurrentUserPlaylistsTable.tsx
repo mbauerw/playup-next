@@ -1,18 +1,26 @@
-import React, {useState} from 'react';
-import { CurrentUserPlaylists, SpotifyPlaylist, MultipleTracks } from '@/types';
+import React, { useState } from 'react';
+import { CurrentUserPlaylists, SpotifyPlaylist, MultipleTracks, PlaylistArtists, PlaylistTopArtists } from '@/types';
 import SortedAlbumTracksTable from './SortedAlbumTracksTable';
+import { getPlaylistTopArtists } from '@/lib/analysis/parsers/parseSpotifyPlaylist';
+import PlaylistTopArtistsTable from './PlaylistTopArtistsTable';
 
 interface CurrentUserPlaylistsTableProps {
   currentUserPlaylists: CurrentUserPlaylists;
   token: string | null;
   handleChangeTrack: (trackId: string) => void;
-  getPlaylistTracks?: (playlist: SpotifyPlaylist | string, token: string, options?: {limit?: number, offset?: number}) => Promise<MultipleTracks>;
-  rankPlaylistTracks?: (playlist: SpotifyPlaylist | string, token: string, options?: {limit?: number, offset?: number}) => Promise<MultipleTracks>;
+  getPlaylistTracks?: (playlist: SpotifyPlaylist | string, token: string, options?: { limit?: number, offset?: number }) => Promise<MultipleTracks>;
+  getPlaylistArtists?: (tracks: MultipleTracks) => PlaylistArtists;
+  getPlaylistTopArtists?: (playlistArtists: PlaylistArtists, limit: number) => PlaylistTopArtists;
+  handleFetchArtistTopTracks?: (artistId: string, market?: string) => Promise<MultipleTracks | null>;
+  rankPlaylistTracks?: (playlist: SpotifyPlaylist | string, token: string, options?: { limit?: number, offset?: number }) => Promise<MultipleTracks>;
 }
 
-const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ currentUserPlaylists, token, handleChangeTrack, getPlaylistTracks, rankPlaylistTracks }) => {
+const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ currentUserPlaylists, token, handleChangeTrack, getPlaylistTracks, getPlaylistArtists, rankPlaylistTracks }) => {
 
   const [playlistTracks, setPlaylistTracks] = useState<MultipleTracks>();
+  const [playlistArtists, setPlaylistArtists] = useState<PlaylistArtists>();
+  const [playlistTopArtists, setPlaylistTopArtists] = useState<PlaylistTopArtists>();
+  const [artistTopTracks, setArtistTopTracks] = useState<MultipleTracks>();
 
   const handleGetPlaylistTracks = async (playlist: SpotifyPlaylist, token: string | null) => {
     if (getPlaylistTracks && token) {
@@ -20,11 +28,41 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
         const tracks = await getPlaylistTracks(playlist, token);
         setPlaylistTracks(tracks);
         console.log(tracks);
+        handleGetPlaylistArtists(tracks);
       } catch (error) {
         console.error('Error fetching playlist tracks:', error);
       }
     }
   };
+
+  const handleGetPlaylistArtists = (playlistTracks: MultipleTracks) => {
+    if (getPlaylistArtists) {
+      try {
+        const artists = getPlaylistArtists(playlistTracks);
+        setPlaylistArtists(artists);
+        console.log("Artists: ", artists);
+        handleGetPlaylistTopArtists(artists);
+      } catch (error) {
+        console.error('Error getting playlist artists: ', error);
+      }
+    }
+
+  }
+
+  const handleGetPlaylistTopArtists = (playlistArtists: PlaylistArtists, limit: number = 5) => {
+    if (getPlaylistTopArtists) {
+      try {
+        const artists = getPlaylistTopArtists(playlistArtists, limit);
+        setPlaylistTopArtists(artists);
+        console.log("Top Artists: ", artists);
+      } catch (error) {
+        console.error('Error getting playlist top artists: ', error);
+      }
+    }
+  }
+
+
+
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b">
@@ -89,20 +127,18 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    playlist.public 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${playlist.public
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                    }`}>
                     {playlist.public ? 'Public' : 'Private'}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    playlist.collaborative 
-                      ? 'bg-blue-100 text-blue-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${playlist.collaborative
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-gray-100 text-gray-800'
+                    }`}>
                     {playlist.collaborative ? 'Yes' : 'No'}
                   </span>
                 </td>
@@ -118,7 +154,9 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
         {playlistTracks &&
           <SortedAlbumTracksTable sortedAlbumTracks={playlistTracks} handleChangeTrack={handleChangeTrack} />
         }
-        
+        {playlistTopArtists &&
+          <PlaylistTopArtistsTable topArtists={playlistTopArtists} />
+        }
       </div>
     </div>
   );

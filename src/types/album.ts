@@ -1,7 +1,6 @@
 import { SpotifyExternalUrls, SpotifyImage, SpotifyLinkedFrom, SpotifyRestrictions, SpotifyExternalIds } from './common';
 import { SpotifyArtist } from './artist';
 
-// Simplified track interface for album tracks (missing some properties like album, external_ids, popularity)
 export interface AlbumTrack {
   artists: SpotifyArtist[];
   available_markets: string[];

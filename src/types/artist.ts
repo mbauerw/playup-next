@@ -19,6 +19,12 @@ export interface MultipleTrackArtists {
 
 export interface PlaylistArtists {
   artists: SpotifyArtist[][];
+  counts: Map<string, number>;
+}
+
+export interface PlaylistTopArtists {
+  artists: SpotifyArtist[];
+  counts: Map<string, number>
 }
 
 export interface FollowedArtistsData {
