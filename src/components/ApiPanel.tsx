@@ -16,6 +16,7 @@ import SortedAlbumTracksTable from './displays/SortedAlbumTracksTable';
 import { Spotify } from 'react-spotify-embed';
 import parseAlbumTracks, { getAlbumIds, rankSongPopularity } from '@/lib/analysis/parsers/parseAlbumTracks';
 import { getPlaylistArtists, getPlaylistTopArtists, getPlaylistTracks, rankPlaylistTracks } from '@/lib/analysis/parsers/parseSpotifyPlaylist';
+import SpotifyPlayer from './SpotifyPlayer';
 
 import {
   Button,
@@ -169,7 +170,7 @@ const ApiPanel = ({
   const [artistAlbumsDialogOpen, setArtistAlbumsDialogOpen] = useState(false);
 
   // spotify widget player params
-  const [playerLink, setPlayerLink] = useState("5ihDGnhQgMA0F0tk9fNLlA?")
+  const [playerLink, setPlayerLink] = useState("5ihDGnhQgMA0F0tk9fNLlA")
 
   // menu anchors
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -398,7 +399,8 @@ const ApiPanel = ({
   };
 
   const handleChangeTrack = (track: string) => {
-    setPlayerLink(track);
+    const cleanTrack = track.split('?')[0].trim();
+    setPlayerLink(cleanTrack);
   }
 
   const onClearAll = () => {
@@ -843,7 +845,8 @@ const ApiPanel = ({
           </div>
         )}
       </div>
-      <Spotify link={`https://open.spotify.com/track/${playerLink}`} />
+      {/* <Spotify link={`https://open.spotify.com/track/${playerLink}`} /> */}
+      <SpotifyPlayer trackId={playerLink} width="50%" height={260}/>
     </div>
   )
 }
