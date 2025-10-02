@@ -351,7 +351,7 @@ const ApiPanel = ({
       const sortedTracks = rankSongPopularity(multipleTracks);
       setSortedAlbumTracks(sortedTracks);
     }
-  }, [multipleTracks])
+  }, [multipleTracks, fetchCurrentUserPlaylists ])
 
   return (
     <div className='flex flex-col gap-10'>

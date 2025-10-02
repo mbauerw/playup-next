@@ -17,11 +17,20 @@ export const spotifyPlaylists = {
   async getPlaylistItems(
     accessToken: string, 
     playlistId: string,
-    options?: { limit?: number; offset?: number }
+    options?: { 
+      market?: string;
+      fields?: string;
+      limit?: number;
+      offset?: number;
+      additional_types?: string;
+    }
   ): Promise<PlaylistItems> {
     const params = new URLSearchParams();
+    if (options?.market) params.append('market', options.market);
+    if (options?.fields) params.append('fields', options.fields);
     if (options?.limit) params.append('limit', options.limit.toString());
     if (options?.offset) params.append('offset', options.offset.toString());
+    if (options?.additional_types) params.append('additional_types', options.additional_types);
     
     const query = params.toString() ? `?${params}` : '';
     return makeAuthenticatedRequest<PlaylistItems>(

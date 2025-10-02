@@ -6,10 +6,17 @@ import { rankSongPopularity } from "./parseAlbumTracks";
 export const getPlaylistTracks = async (
   playlist: SpotifyPlaylist | string,
   token: string,
-  options?: { limit?: number, offset?: number }
+  options?: { 
+    market?: string,
+    fields?: string,
+    limit?: number,
+    offset?: number,
+    additional_types?: string }
 ): Promise<MultipleTracks> => {
   const playlistId = typeof playlist === 'string' ? playlist : playlist.id;
   const items = await spotifyPlaylists.getPlaylistItems(token, playlistId, options);
+
+  console.log("Items from getPlaylistTracks:" + JSON.stringify(items));
 
   const tracks = items.items
     .map(playlistTrack => playlistTrack.track)
@@ -47,6 +54,8 @@ export const getPlaylistTopArtists = (
     .slice(0, limit);
 
   const topCounts = new Map(sortedEntries);
+
+  // console.log("Here are the artists: ", JSON.stringify(playlistArtists));
   
   const topArtists = sortedEntries
     .map(([artistId]) => {
@@ -57,6 +66,8 @@ export const getPlaylistTopArtists = (
     })
     .filter((artist): artist is SpotifyArtist => artist !== undefined);
 
+
+  // console.log("\n Here are the TOP artists: ", JSON.stringify(playlistArtists));  
   return {
     artists: topArtists,
     counts: topCounts
@@ -66,6 +77,7 @@ export const getPlaylistTopArtists = (
 
 export const rankPlaylistTracks = async (playlist: SpotifyPlaylist, token: string, options?: { limit?: number, offset?: number }): Promise<MultipleTracks> => {
   const tracks = await getPlaylistTracks(playlist, token, options);
+  console.log("Here are the tracks: ", JSON.stringify(tracks));
   const rankedTracks = rankSongPopularity(tracks);
   return rankedTracks;
 

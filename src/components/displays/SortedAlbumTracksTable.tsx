@@ -1,20 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MultipleTracks } from '@/types';
 
 interface SortedAlbumTracksTableProps {
   sortedAlbumTracks: MultipleTracks
-  handleChangeTrack: (trackId: string) => void; // Function that takes a string and returns nothing
+  handleChangeTrack: (trackId: string) => void;
 }
 
 const SortedAlbumTracksTable: React.FC<SortedAlbumTracksTableProps> = ({ sortedAlbumTracks, handleChangeTrack }) => {
+  const [currentPage, setCurrentPage] = useState(0);
+  const tracksPerPage = 10;
+  
+  const validTracks = sortedAlbumTracks.tracks.filter(t => t !== null);
+  const totalPages = Math.ceil(validTracks.length / tracksPerPage);
+  
+  const startIndex = currentPage * tracksPerPage;
+  const endIndex = startIndex + tracksPerPage;
+  const currentTracks = validTracks.slice(startIndex, endIndex);
+
+  const handlePrevPage = () => {
+    setCurrentPage(prev => Math.max(0, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
+  };
+
   return (
     <div className="bg-gray-800 rounded-lg shadow-xl overflow-hidden mt-6 border border-gray-700">
       <div className="px-6 py-4 border-b border-gray-700">
         <h3 className="text-xl font-bold text-gray-100">
-          Tracks Sorted by Popularity ({sortedAlbumTracks.tracks.filter(t => t !== null).length} tracks)
+          Tracks Sorted by Popularity ({validTracks.length} tracks)
         </h3>
         <p className="text-sm text-gray-400">
-          Ranked from most to least popular
+          Ranked from most to least popular - Showing {startIndex + 1}-{Math.min(endIndex, validTracks.length)} of {validTracks.length}
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -31,12 +49,12 @@ const SortedAlbumTracksTable: React.FC<SortedAlbumTracksTableProps> = ({ sortedA
             </tr>
           </thead>
           <tbody className="bg-gray-800 divide-y divide-gray-700">
-            {sortedAlbumTracks.tracks
-              .filter(track => track !== null)
-              .map((track, index) => (
+            {currentTracks.map((track, index) => {
+              const actualRank = startIndex + index + 1;
+              return (
                 <tr key={track!.id || index} className="hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-bold text-gray-100">#{index + 1}</div>
+                    <div className="font-bold text-gray-100">#{actualRank}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-medium text-gray-100">{track!.name}</div>
@@ -67,13 +85,34 @@ const SortedAlbumTracksTable: React.FC<SortedAlbumTracksTableProps> = ({ sortedA
                     </span>
                   </td>
                 </tr>
-              ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
+      
+      {/* Pagination Controls */}
+      <div className="px-6 py-4 border-t border-gray-700 flex items-center justify-between">
+        <button
+          onClick={handlePrevPage}
+          disabled={currentPage === 0}
+          className="px-4 py-2 bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Previous
+        </button>
+        <span className="text-gray-300">
+          Page {currentPage + 1} of {totalPages}
+        </span>
+        <button
+          onClick={handleNextPage}
+          disabled={currentPage === totalPages - 1}
+          className="px-4 py-2 bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      </div>
     </div>
-
-  )
+  );
 }
 
 export default SortedAlbumTracksTable;
