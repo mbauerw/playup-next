@@ -141,7 +141,6 @@ const ApiPanel = ({
   const [playlistsOffset, setPlaylistsOffset] = useState(0);
   const [playlistsDialogOpen, setPlaylistsDialogOpen] = useState(false);
 
-
   // album params
   const ledZeppelinII = "58MQ0PLijVHePUonQlK76Y";
   const [albumId, setAlbumId] = useState('58MQ0PLijVHePUonQlK76Y'); // Example album ID
@@ -150,6 +149,24 @@ const ApiPanel = ({
   const [albumTracksMarket, setAlbumTracksMarket] = useState('US');
   const [albumTracksDialogOpen, setAlbumTracksDialogOpen] = useState(false);
   const [sortedAlbumTracks, setSortedAlbumTracks] = useState<MultipleTracks>();
+
+  // NEW: Single track params
+  const [singleTrackId, setSingleTrackId] = useState('1rxD34LAtkafrMUHqHIV76');
+  const [singleTrackMarket, setSingleTrackMarket] = useState('US');
+  const [singleTrackDialogOpen, setSingleTrackDialogOpen] = useState(false);
+
+  // NEW: Several tracks params
+  const [severalTrackIds, setSeveralTrackIds] = useState('1rxD34LAtkafrMUHqHIV76,3n3Ppam7vgaVa1iaRUc9Lp');
+  const [severalTracksMarket, setSeveralTracksMarket] = useState('US');
+  const [severalTracksDialogOpen, setSeveralTracksDialogOpen] = useState(false);
+
+  // NEW: Artist albums params
+  const [artistAlbumsId, setArtistAlbumsId] = useState('0LcJLqbBmaGUft1e9Mm8HV'); // ABBA
+  const [artistAlbumsIncludeGroups, setArtistAlbumsIncludeGroups] = useState('album,single');
+  const [artistAlbumsMarket, setArtistAlbumsMarket] = useState('US');
+  const [artistAlbumsLimit, setArtistAlbumsLimit] = useState(20);
+  const [artistAlbumsOffset, setArtistAlbumsOffset] = useState(0);
+  const [artistAlbumsDialogOpen, setArtistAlbumsDialogOpen] = useState(false);
 
   // spotify widget player params
   const [playerLink, setPlayerLink] = useState("5ihDGnhQgMA0F0tk9fNLlA?")
@@ -187,6 +204,72 @@ const ApiPanel = ({
       fetchTrack(currentToken, trackId, market || undefined);
     } catch (error) {
       console.error('Failed to get token for track fetch:', error);
+    }
+  };
+
+  // NEW: Single track dialog handlers
+  const handleOpenSingleTrackDialog = () => {
+    handleClose();
+    setSingleTrackDialogOpen(true);
+  };
+
+  const handleCloseSingleTrackDialog = () => {
+    setSingleTrackDialogOpen(false);
+  };
+
+  const handleGetSingleTrack = async () => {
+    try {
+      const currentToken = await getFreshToken();
+      await fetchTrack(currentToken, singleTrackId, singleTrackMarket || undefined);
+      setSingleTrackDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to fetch single track:', error);
+    }
+  };
+
+  // NEW: Several tracks dialog handlers
+  const handleOpenSeveralTracksDialog = () => {
+    handleClose();
+    setSeveralTracksDialogOpen(true);
+  };
+
+  const handleCloseSeveralTracksDialog = () => {
+    setSeveralTracksDialogOpen(false);
+  };
+
+  const handleGetSeveralTracks = async () => {
+    try {
+      const currentToken = await getFreshToken();
+      const trackIdsArray = severalTrackIds.split(',').map(id => id.trim()).filter(id => id.length > 0);
+      await fetchSeveralTracks(currentToken, trackIdsArray, severalTracksMarket || undefined);
+      setSeveralTracksDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to fetch several tracks:', error);
+    }
+  };
+
+  // NEW: Artist albums dialog handlers
+  const handleOpenArtistAlbumsDialog = () => {
+    handleClose();
+    setArtistAlbumsDialogOpen(true);
+  };
+
+  const handleCloseArtistAlbumsDialog = () => {
+    setArtistAlbumsDialogOpen(false);
+  };
+
+  const handleGetArtistAlbums = async () => {
+    try {
+      const currentToken = await getFreshToken();
+      await fetchArtistAlbums(currentToken, artistAlbumsId, {
+        include_groups: artistAlbumsIncludeGroups || undefined,
+        market: artistAlbumsMarket || undefined,
+        limit: artistAlbumsLimit,
+        offset: artistAlbumsOffset
+      });
+      setArtistAlbumsDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to fetch artist albums:', error);
     }
   };
 
@@ -275,7 +358,6 @@ const ApiPanel = ({
     }
   };
 
-
   const handleFetchArtistTopTracks = async (artistId: string, market?: string) : Promise<MultipleTracks | null> => {
     try {
       const currentToken = await getFreshToken();
@@ -308,7 +390,6 @@ const ApiPanel = ({
         market: albumTracksMarket || undefined
       });
 
-
     } catch (error) {
       console.error('Failed to fetch album tracks:', error);
     }
@@ -324,7 +405,8 @@ const ApiPanel = ({
     clearPlayerData();
     clearPlaylistsData();
     clearAlbumsData();
-    clearTracksData(); // Add this line
+    clearTracksData();
+    clearArtistData();
   }
 
   useEffect(() => {
@@ -351,7 +433,7 @@ const ApiPanel = ({
       const sortedTracks = rankSongPopularity(multipleTracks);
       setSortedAlbumTracks(sortedTracks);
     }
-  }, [multipleTracks, fetchCurrentUserPlaylists ])
+  }, [multipleTracks, fetchCurrentUserPlaylists])
 
   return (
     <div className='flex flex-col gap-10'>
@@ -414,6 +496,12 @@ const ApiPanel = ({
             'aria-labelledby': 'basic-button',
           }}
         >
+          <MenuItem onClick={handleOpenSingleTrackDialog}>
+            Fetch Single Track
+          </MenuItem>
+          <MenuItem onClick={handleOpenSeveralTracksDialog}>
+            Fetch Several Tracks
+          </MenuItem>
           <MenuItem onClick={handleOpenSavedTracksDialog}>
             Get Saved Tracks
           </MenuItem>
@@ -426,9 +514,132 @@ const ApiPanel = ({
           <MenuItem onClick={handleOpenAlbumTracksDialog}>
             Get Album Tracks
           </MenuItem>
+          <MenuItem onClick={handleOpenArtistAlbumsDialog}>
+            Fetch Artist Albums
+          </MenuItem>
         </Menu>
 
-        {/* All the dialog components remain the same */}
+        {/* NEW: Single Track Dialog */}
+        <Dialog open={singleTrackDialogOpen} onClose={handleCloseSingleTrackDialog}>
+          <DialogTitle>Fetch Single Track</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+              <TextField
+                label="Track ID"
+                type="text"
+                value={singleTrackId}
+                onChange={(e) => setSingleTrackId(e.target.value)}
+                helperText="Spotify track ID"
+                fullWidth
+              />
+              <TextField
+                label="Market"
+                type="text"
+                value={singleTrackMarket}
+                onChange={(e) => setSingleTrackMarket(e.target.value)}
+                helperText="Market code (e.g., US, GB) - optional"
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseSingleTrackDialog}>Cancel</Button>
+            <Button onClick={handleGetSingleTrack} variant="contained" disabled={!token}>
+              Fetch Track
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* NEW: Several Tracks Dialog */}
+        <Dialog open={severalTracksDialogOpen} onClose={handleCloseSeveralTracksDialog}>
+          <DialogTitle>Fetch Several Tracks</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+              <TextField
+                label="Track IDs"
+                type="text"
+                value={severalTrackIds}
+                onChange={(e) => setSeveralTrackIds(e.target.value)}
+                helperText="Comma-separated Spotify track IDs (e.g., id1,id2,id3)"
+                fullWidth
+                multiline
+                rows={2}
+              />
+              <TextField
+                label="Market"
+                type="text"
+                value={severalTracksMarket}
+                onChange={(e) => setSeveralTracksMarket(e.target.value)}
+                helperText="Market code (e.g., US, GB) - optional"
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseSeveralTracksDialog}>Cancel</Button>
+            <Button onClick={handleGetSeveralTracks} variant="contained" disabled={!token}>
+              Fetch Tracks
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* NEW: Artist Albums Dialog */}
+        <Dialog open={artistAlbumsDialogOpen} onClose={handleCloseArtistAlbumsDialog}>
+          <DialogTitle>Fetch Artist Albums</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+              <TextField
+                label="Artist ID"
+                type="text"
+                value={artistAlbumsId}
+                onChange={(e) => setArtistAlbumsId(e.target.value)}
+                helperText="Spotify artist ID"
+                fullWidth
+              />
+              <TextField
+                label="Include Groups"
+                type="text"
+                value={artistAlbumsIncludeGroups}
+                onChange={(e) => setArtistAlbumsIncludeGroups(e.target.value)}
+                helperText="Comma-separated: album, single, appears_on, compilation"
+                fullWidth
+              />
+              <TextField
+                label="Market"
+                type="text"
+                value={artistAlbumsMarket}
+                onChange={(e) => setArtistAlbumsMarket(e.target.value)}
+                helperText="Market code (e.g., US, GB) - optional"
+                fullWidth
+              />
+              <TextField
+                label="Limit"
+                type="number"
+                value={artistAlbumsLimit}
+                onChange={(e) => setArtistAlbumsLimit(Math.max(1, Math.min(50, parseInt(e.target.value) || 1)))}
+                helperText="Number of albums to fetch (1-50)"
+                inputProps={{ min: 1, max: 50 }}
+                fullWidth
+              />
+              <TextField
+                label="Offset"
+                type="number"
+                value={artistAlbumsOffset}
+                onChange={(e) => setArtistAlbumsOffset(Math.max(0, parseInt(e.target.value) || 0))}
+                helperText="Starting position (0 = first album)"
+                inputProps={{ min: 0 }}
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseArtistAlbumsDialog}>Cancel</Button>
+            <Button onClick={handleGetArtistAlbums} variant="contained" disabled={!token}>
+              Fetch Albums
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         {/* Saved Tracks Parameters Dialog */}
         <Dialog open={savedTracksDialogOpen} onClose={handleCloseSavedTracksDialog}>
           <DialogTitle>Fetch Saved Tracks</DialogTitle>
@@ -625,10 +836,10 @@ const ApiPanel = ({
         </button>
 
         {/* Display any errors */}
-        {(tracksError || playerError || playlistsError || albumsError) && (
+        {(tracksError || playerError || playlistsError || albumsError || artistError) && (
           <div className="bg-red-900 border border-red-600 text-red-200 px-4 py-3 rounded mt-4">
             <p className="font-medium">Error:</p>
-            <p>{tracksError || playerError || playlistsError || albumsError}</p>
+            <p>{tracksError || playerError || playlistsError || albumsError || artistError}</p>
           </div>
         )}
       </div>
