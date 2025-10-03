@@ -14,13 +14,6 @@ interface MultipleTracksTableProps {
 
 const MultipleTracksTable: React.FC<MultipleTracksTableProps> = ({ tracks, handleChangeTrack, title = `Sorted Tracks` }) => {
 
-  const {
-    albumTracks,
-    loading: albumsLoading,
-    error: albumsError,
-    fetchAlbumTracks,
-    clearData: clearAlbumsData,
-  } = useSpotifyAlbums();
 
   const [currentPage, setCurrentPage] = useState(0);
   const tracksPerPage = 10;
@@ -33,8 +26,9 @@ const MultipleTracksTable: React.FC<MultipleTracksTableProps> = ({ tracks, handl
   const currentTracks = validTracks.slice(startIndex, endIndex);
 
   const [albumName, setAlbumName] = useState<string>();
+  const [displayAlbum, setDisplayAlbum] = useState<SpotifyAlbum>();
 
-   // Get access to the auth system for token refresh if needed
+  // refresh token
   const { getAccessToken } = useSpotifyAuth();
 
   const handlePrevPage = () => {
@@ -45,24 +39,28 @@ const MultipleTracksTable: React.FC<MultipleTracksTableProps> = ({ tracks, handl
     setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
   };
 
-  const handleGetAlbumTracks = async (album: SpotifyAlbum) => {
-    const token = await getAccessToken();
-    console.log(token);
-    if (token) {
-      try {
-        await fetchAlbumTracks(token, album.id);
-        setAlbumName(album.name);
-        console.log("WE GOTTEM ALBUM TRACKS BOYS");   
-      } catch (error) {
-        console.error("couldn't get albumb tracks from MTs", error);
-      }
-    } 
-    else {
-      console.log("No token fetching album tracks");
-    }
+  // const handleGetAlbumTracks = async (album: SpotifyAlbum) => {
+  //   const token = await getAccessToken();
+  //   console.log(token);
+  //   if (token) {
+  //     try {
+  //       await fetchAlbumTracks(token, album.id);
+  //       setAlbumName(album.name);
+        
+  //       console.log("WE GOTTEM ALBUM TRACKS BOYS");   
+  //     } catch (error) {
+  //       console.error("couldn't get albumb tracks from MTs", error);
+  //     }
+  //   } 
+  //   else {
+  //     console.log("No token fetching album tracks");
+  //   }
     
-  }
+  // }
 
+  const handleGetAlbumTracks = (album: SpotifyAlbum) => {
+    setDisplayAlbum(album)
+  }
 
   return (
     <div className="bg-gray-800 rounded-lg shadow-xl overflow-hidden mt-6 border border-gray-700">
@@ -161,8 +159,8 @@ const MultipleTracksTable: React.FC<MultipleTracksTableProps> = ({ tracks, handl
           Next
         </button>
       </div>
-      {albumTracks && 
-        <AlbumTracksTable albumName={albumName} albumTracks={albumTracks} handleChangeTrack={handleChangeTrack}/>}
+      {displayAlbum && 
+        <AlbumTracksTable album={displayAlbum} handleChangeTrack={handleChangeTrack}/>}
     </div>
   );
 }

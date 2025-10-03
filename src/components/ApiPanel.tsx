@@ -102,9 +102,11 @@ const ApiPanel = ({
 
   // album hooks
   const {
+    album,
     albumTracks,
     loading: albumsLoading,
     error: albumsError,
+    fetchAlbum,
     fetchAlbumTracks,
     clearData: clearAlbumsData,
   } = useSpotifyAlbums();
@@ -389,18 +391,13 @@ const ApiPanel = ({
     setAlbumTracksDialogOpen(false);
   };
 
-  const handleGetAlbumTracks = async (customAlbumId?: string, customOptions?: { limit?: number; offset?: number; market?: string }) => {
+  const handleGetAlbum = async (customAlbumId?: string, market?: string ) => {
     try {
       const currentToken = await getFreshToken();
 
       const idToUse = customAlbumId || albumId
-      const optionsToUse = customOptions || {
-        limit: albumTracksLimit,
-        offset: albumTracksOffset,
-        market: albumTracksMarket || undefined
-      };
 
-      await fetchAlbumTracks(currentToken, idToUse, optionsToUse);
+      await fetchAlbum(currentToken, idToUse, market);
 
     } catch (error) {
       console.error('Failed to fetch album tracks:', error);
@@ -834,7 +831,7 @@ const ApiPanel = ({
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseAlbumTracksDialog}>Cancel</Button>
-            <Button onClick={() =>handleGetAlbumTracks} variant="contained" disabled={!token}>
+            <Button onClick={() =>handleGetAlbum} variant="contained" disabled={!token}>
               Fetch Album Tracks
             </Button>
           </DialogActions>
@@ -892,8 +889,8 @@ const ApiPanel = ({
         )}
 
         {/* Album Tracks Display - Enhanced with full track data */}
-        {albumTracks && (
-          <AlbumTracksTable albumTracks={albumTracks} handleChangeTrack={handleChangeTrack} />
+        {album && (
+          <AlbumTracksTable album={album} handleChangeTrack={handleChangeTrack} />
         )}
 
         {/* Sorted Album Tracks Display */}
