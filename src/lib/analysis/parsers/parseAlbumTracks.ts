@@ -1,7 +1,7 @@
 import { AlbumTracks, MultipleTracks } from "@/types"
 
 
-export const getAlbumIds = (albumTracks: AlbumTracks) => {
+export const getAlbumTrackIds = (albumTracks: AlbumTracks) => {
   return albumTracks.items
       .filter(track => track.id) // Filter out any tracks without IDs
       .map(track => track.id);
@@ -21,7 +21,7 @@ export const rankSongPopularity = (multipleTracks: MultipleTracks): MultipleTrac
 
 const parseAlbumTracks = (albumTracks : AlbumTracks) => {
 
-  return {getAlbumIds: () => getAlbumIds(albumTracks)};
+  return {getAlbumTrackIds: () => getAlbumTrackIds(albumTracks)};
 
 } 
 

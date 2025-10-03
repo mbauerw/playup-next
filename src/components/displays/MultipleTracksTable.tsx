@@ -1,21 +1,41 @@
 import React, { useState } from 'react';
-import { MultipleTracks } from '@/types';
+import { MultipleTracks, AlbumTrack, AlbumTracks, SpotifyAlbum } from '@/types';
+import { getAlbumTrackIds } from '@/lib/analysis/parsers/parseAlbumTracks';
+import AlbumTracksTable from './AlbumTracksTable';
+import { useSpotifyAlbums } from '@/hooks';
+import { useSpotifyAuth } from '@/hooks';
 
-interface SortedAlbumTracksTableProps {
-  sortedAlbumTracks: MultipleTracks
-  handleChangeTrack: (trackId: string) => void;
+
+interface MultipleTracksTableProps {
+  tracks: MultipleTracks
+  handleChangeTrack: (trackId: string) => void
+  title?: string
 }
 
-const SortedAlbumTracksTable: React.FC<SortedAlbumTracksTableProps> = ({ sortedAlbumTracks, handleChangeTrack }) => {
+const MultipleTracksTable: React.FC<MultipleTracksTableProps> = ({ tracks, handleChangeTrack, title = `Sorted Tracks` }) => {
+
+  const {
+    albumTracks,
+    loading: albumsLoading,
+    error: albumsError,
+    fetchAlbumTracks,
+    clearData: clearAlbumsData,
+  } = useSpotifyAlbums();
+
   const [currentPage, setCurrentPage] = useState(0);
   const tracksPerPage = 10;
   
-  const validTracks = sortedAlbumTracks.tracks.filter(t => t !== null);
+  const validTracks = tracks.tracks.filter(t => t !== null);
   const totalPages = Math.ceil(validTracks.length / tracksPerPage);
   
   const startIndex = currentPage * tracksPerPage;
   const endIndex = startIndex + tracksPerPage;
   const currentTracks = validTracks.slice(startIndex, endIndex);
+
+  const [albumName, setAlbumName] = useState<string>();
+
+   // Get access to the auth system for token refresh if needed
+  const { getAccessToken } = useSpotifyAuth();
 
   const handlePrevPage = () => {
     setCurrentPage(prev => Math.max(0, prev - 1));
@@ -25,11 +45,30 @@ const SortedAlbumTracksTable: React.FC<SortedAlbumTracksTableProps> = ({ sortedA
     setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
   };
 
+  const handleGetAlbumTracks = async (album: SpotifyAlbum) => {
+    const token = await getAccessToken();
+    console.log(token);
+    if (token) {
+      try {
+        await fetchAlbumTracks(token, album.id);
+        setAlbumName(album.name);
+        console.log("WE GOTTEM ALBUM TRACKS BOYS");   
+      } catch (error) {
+        console.error("couldn't get albumb tracks from MTs", error);
+      }
+    } 
+    else {
+      console.log("No token fetching album tracks");
+    }
+    
+  }
+
+
   return (
     <div className="bg-gray-800 rounded-lg shadow-xl overflow-hidden mt-6 border border-gray-700">
       <div className="px-6 py-4 border-b border-gray-700">
         <h3 className="text-xl font-bold text-gray-100">
-          Tracks Sorted by Popularity ({validTracks.length} tracks)
+          {title} ({validTracks.length} tracks)
         </h3>
         <p className="text-sm text-gray-400">
           Ranked from most to least popular - Showing {startIndex + 1}-{Math.min(endIndex, validTracks.length)} of {validTracks.length}
@@ -41,7 +80,8 @@ const SortedAlbumTracksTable: React.FC<SortedAlbumTracksTableProps> = ({ sortedA
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Rank</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Track</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Play</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"></th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"></th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Artist</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Duration</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Popularity</th>
@@ -61,10 +101,20 @@ const SortedAlbumTracksTable: React.FC<SortedAlbumTracksTableProps> = ({ sortedA
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
-                      className='bg-green-500 shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 border border-solid border-gray-600 rounded-md px-2 text-gray-900 font-medium'
+                      className='bg-green-500 shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 
+                      border border-solid border-gray-600 rounded-md px-2 text-gray-900 font-medium transition-all duration-600'
                       onClick={() => handleChangeTrack(track!.id)}
                     >
                       Play
+                    </button>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <button
+                      className='bg-violet-600 shadow-md hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 
+                      border border-solid border-gray-600 rounded-md px-2 text-gray-900 font-medium transition-all duration-600'
+                      onClick={() => handleGetAlbumTracks(track!.album)}
+                    >
+                      Get Album
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
@@ -111,8 +161,10 @@ const SortedAlbumTracksTable: React.FC<SortedAlbumTracksTableProps> = ({ sortedA
           Next
         </button>
       </div>
+      {albumTracks && 
+        <AlbumTracksTable albumName={albumName} albumTracks={albumTracks} handleChangeTrack={handleChangeTrack}/>}
     </div>
   );
 }
 
-export default SortedAlbumTracksTable;
+export default MultipleTracksTable;

@@ -12,9 +12,9 @@ import SavedTracksTable from './displays/SavedTracksTable';
 import RecentlyPlayedTracksTable from './displays/RecentlyPlayedTracksTable';
 import CurrentUserPlaylistsTable from './displays/CurrentUserPlaylistsTable';
 import AlbumTracksTable from './displays/AlbumTracksTable';
-import SortedAlbumTracksTable from './displays/SortedAlbumTracksTable';
+import MultipleTracksTable from './displays/MultipleTracksTable';
 import { Spotify } from 'react-spotify-embed';
-import parseAlbumTracks, { getAlbumIds, rankSongPopularity } from '@/lib/analysis/parsers/parseAlbumTracks';
+import parseAlbumTracks, { getAlbumTrackIds, rankSongPopularity } from '@/lib/analysis/parsers/parseAlbumTracks';
 import { getPlaylistArtists, getPlaylistTopArtists, getPlaylistTracks, rankPlaylistTracks } from '@/lib/analysis/parsers/parseSpotifyPlaylist';
 import SpotifyPlayer from './SpotifyPlayer';
 
@@ -110,7 +110,7 @@ const ApiPanel = ({
   } = useSpotifyAlbums();
 
   // artist hooks
-  const {artist,
+  const { artist,
     artists,
     artistAlbums,
     artistTopTracks,
@@ -175,6 +175,14 @@ const ApiPanel = ({
   // menu anchors
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open: boolean = Boolean(anchorEl);
+
+  // Artist top tracks params
+  const [artistTopTracksId, setArtistTopTracksId] = useState('4V8LLVI7PbaPR0K2TGSxFF'); // ABBA
+  const [artistTopTracksMarket, setArtistTopTracksMarket] = useState('US');
+  const [artistTopTracksDialogOpen, setArtistTopTracksDialogOpen] = useState(false);
+
+  // artists
+  const tyler = "4V8LLVI7PbaPR0K2TGSxFF"
 
   // Helper function to get fresh token if needed
   const getFreshToken = useCallback(async (): Promise<string> => {
@@ -249,7 +257,7 @@ const ApiPanel = ({
     }
   };
 
-  // NEW: Artist albums dialog handlers
+  // Artist albums dialog handlers
   const handleOpenArtistAlbumsDialog = () => {
     handleClose();
     setArtistAlbumsDialogOpen(true);
@@ -359,7 +367,7 @@ const ApiPanel = ({
     }
   };
 
-  const handleFetchArtistTopTracks = async (artistId: string, market?: string) : Promise<MultipleTracks | null> => {
+  const handleFetchArtistTopTracks = async (artistId: string, market?: string): Promise<MultipleTracks | null> => {
     try {
       const currentToken = await getFreshToken();
       await fetchArtistTopTracks(currentToken, artistId, market);
@@ -368,7 +376,7 @@ const ApiPanel = ({
     catch (error) {
       console.error('Could not get the top trackies: ', error);
       return null;
-    } 
+    }
   }
 
   // album handlers
@@ -381,15 +389,18 @@ const ApiPanel = ({
     setAlbumTracksDialogOpen(false);
   };
 
-  const handleGetAlbumTracks = async () => {
+  const handleGetAlbumTracks = async (customAlbumId?: string, customOptions?: { limit?: number; offset?: number; market?: string }) => {
     try {
       const currentToken = await getFreshToken();
 
-      await fetchAlbumTracks(currentToken, albumId, {
+      const idToUse = customAlbumId || albumId
+      const optionsToUse = customOptions || {
         limit: albumTracksLimit,
         offset: albumTracksOffset,
         market: albumTracksMarket || undefined
-      });
+      };
+
+      await fetchAlbumTracks(currentToken, idToUse, optionsToUse);
 
     } catch (error) {
       console.error('Failed to fetch album tracks:', error);
@@ -402,6 +413,32 @@ const ApiPanel = ({
     const cleanTrack = track.split('?')[0].trim();
     setPlayerLink(cleanTrack);
   }
+
+  // Artist top tracks dialog handlers
+  const handleOpenArtistTopTracksDialog = () => {
+    handleClose();
+    setArtistTopTracksDialogOpen(true);
+  };
+
+  const handleCloseArtistTopTracksDialog = () => {
+    setArtistTopTracksDialogOpen(false);
+  };
+
+  const handleGetArtistTopTracks = async () => {
+    try {
+      const currentToken = await getFreshToken();
+      console.log("Aritst Top Track ID: " + artistTopTracksId);
+      console.log("Hurmph")
+      await fetchArtistTopTracks(
+        currentToken,
+        artistTopTracksId,
+        artistTopTracksMarket || undefined
+      );
+      setArtistTopTracksDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to fetch artist top tracks:', error);
+    }
+  };
 
   const onClearAll = () => {
     clearPlayerData();
@@ -416,7 +453,7 @@ const ApiPanel = ({
       if (albumTracks && albumTracks.items.length > 0) {
         try {
           const currentToken = await getFreshToken();
-          const trackIds = getAlbumIds(albumTracks);
+          const trackIds = getAlbumTrackIds(albumTracks);
 
           if (trackIds.length > 0) {
             fetchSeveralTracks(currentToken, trackIds, albumTracksMarket || undefined);
@@ -518,6 +555,9 @@ const ApiPanel = ({
           </MenuItem>
           <MenuItem onClick={handleOpenArtistAlbumsDialog}>
             Fetch Artist Albums
+          </MenuItem>
+          <MenuItem onClick={handleOpenArtistTopTracksDialog}>
+            Fetch Artist Top Tracks
           </MenuItem>
         </Menu>
 
@@ -794,8 +834,39 @@ const ApiPanel = ({
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseAlbumTracksDialog}>Cancel</Button>
-            <Button onClick={handleGetAlbumTracks} variant="contained" disabled={!token}>
+            <Button onClick={() =>handleGetAlbumTracks} variant="contained" disabled={!token}>
               Fetch Album Tracks
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Artist Top Tracks Dialog */}
+        <Dialog open={artistTopTracksDialogOpen} onClose={handleCloseArtistTopTracksDialog}>
+          <DialogTitle>Fetch Artist Top Tracks</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+              <TextField
+                label="Artist ID"
+                type="text"
+                value={artistTopTracksId}
+                onChange={(e) => setArtistTopTracksId(e.target.value)}
+                helperText="Spotify artist ID"
+                fullWidth
+              />
+              <TextField
+                label="Market"
+                type="text"
+                value={artistTopTracksMarket}
+                onChange={(e) => setArtistTopTracksMarket(e.target.value)}
+                helperText="Market code (e.g., US, GB)"
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseArtistTopTracksDialog}>Cancel</Button>
+            <Button onClick={handleGetArtistTopTracks} variant="contained" disabled={!token}>
+              Fetch Top Tracks
             </Button>
           </DialogActions>
         </Dialog>
@@ -811,24 +882,29 @@ const ApiPanel = ({
 
         {/* Current User Playlists Display */}
         {currentUserPlaylists && (
-          <CurrentUserPlaylistsTable 
-            currentUserPlaylists={currentUserPlaylists} 
-            token={token} 
-            handleChangeTrack={handleChangeTrack} 
+          <CurrentUserPlaylistsTable
+            currentUserPlaylists={currentUserPlaylists}
+            token={token}
+            handleChangeTrack={handleChangeTrack}
             getPlaylistTracks={getPlaylistTracks}
             getPlaylistArtists={getPlaylistArtists}
-            handleFetchArtistTopTracks={handleFetchArtistTopTracks}  />
+            handleFetchArtistTopTracks={handleFetchArtistTopTracks} />
         )}
 
         {/* Album Tracks Display - Enhanced with full track data */}
         {albumTracks && (
-          <AlbumTracksTable albumTracks={albumTracks} multipleTracks={multipleTracks} handleChangeTrack={handleChangeTrack} />
+          <AlbumTracksTable albumTracks={albumTracks} handleChangeTrack={handleChangeTrack} />
         )}
 
         {/* Sorted Album Tracks Display */}
         {sortedAlbumTracks && (
-          <SortedAlbumTracksTable sortedAlbumTracks={sortedAlbumTracks} handleChangeTrack={handleChangeTrack} />
+          <MultipleTracksTable tracks={sortedAlbumTracks} title="Sorted Album Tracks" handleChangeTrack={handleChangeTrack} />
         )}
+
+        {artistTopTracks && (
+          <MultipleTracksTable tracks={artistTopTracks} title="Artist Top Tracks" handleChangeTrack={handleChangeTrack} />
+        )}
+
 
         <button
           onClick={onClearAll}
@@ -846,7 +922,7 @@ const ApiPanel = ({
         )}
       </div>
       {/* <Spotify link={`https://open.spotify.com/track/${playerLink}`} /> */}
-      <SpotifyPlayer trackId={playerLink} width="50%" height={260}/>
+      <SpotifyPlayer trackId={playerLink} width="50%" height={260} />
     </div>
   )
 }

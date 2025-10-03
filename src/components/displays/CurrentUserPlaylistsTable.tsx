@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CurrentUserPlaylists, SpotifyPlaylist, MultipleTracks, PlaylistArtists, PlaylistTopArtists } from '@/types';
-import SortedAlbumTracksTable from './SortedAlbumTracksTable';
+import MultipleTracksTable from './MultipleTracksTable';
 import { getPlaylistTopArtists } from '@/lib/analysis/parsers/parseSpotifyPlaylist';
 import PlaylistTopArtistsTable from './PlaylistTopArtistsTable';
 
@@ -164,7 +164,7 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
       </div>
       <div>
         {playlistTracks &&
-          <SortedAlbumTracksTable sortedAlbumTracks={playlistTracks} handleChangeTrack={handleChangeTrack} />
+          <MultipleTracksTable tracks={playlistTracks} handleChangeTrack={handleChangeTrack}/>
         }
         {playlistTopArtists &&
           <PlaylistTopArtistsTable topArtists={playlistTopArtists} />

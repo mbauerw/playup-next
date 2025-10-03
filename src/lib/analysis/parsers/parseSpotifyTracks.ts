@@ -6,3 +6,14 @@ export const getMultpleTrackArtists = (tracks: MultipleTracks): MultipleTrackArt
   return { artists };
 
 }
+
+export const rankSongPopularity = (multipleTracks: MultipleTracks): MultipleTracks => {
+  return {
+    ...multipleTracks,
+    tracks: [...multipleTracks.tracks].sort((a, b) => {
+      const aPopularity = a?.popularity ?? 0;
+      const bPopularity = b?.popularity ?? 0;
+      return bPopularity - aPopularity;
+    })
+  };
+}

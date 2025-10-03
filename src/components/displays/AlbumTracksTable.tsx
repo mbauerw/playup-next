@@ -1,19 +1,61 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AlbumTracks, MultipleTracks } from '@/types';
+import { getAlbumTrackIds } from '@/lib/analysis/parsers/parseAlbumTracks';
+import { useSpotifyTracks } from '@/hooks';
+import { useSpotifyAuth } from '@/hooks';
+
 
 interface AlbumTracksTableProps {
+  albumName?: string;
   albumTracks: AlbumTracks;
-  multipleTracks: MultipleTracks | null;
   handleChangeTrack: (trackId: string) => void; // Function that takes a string and returns nothing
 }
 
-const AlbumTracksTable: React.FC<AlbumTracksTableProps> = ({ albumTracks, multipleTracks, handleChangeTrack }) => {
+const AlbumTracksTable: React.FC<AlbumTracksTableProps> = ({ albumName, albumTracks, handleChangeTrack }) => {
+
+  const {
+      singleTrack,
+      multipleTracks,
+      loading: trackLoading,
+      error: tracksError,
+      fetchTrack,
+      fetchSeveralTracks,
+      clearData: clearTracksData
+    } = useSpotifyTracks();
+
+    const {getAccessToken} = useSpotifyAuth();
+
+    const title = albumName || "Album Tracks" ; 
+    
+
+    useEffect(() => {
+      const getSeveralTracksFromAlbum = async () => {
+        const token = await getAccessToken();
+        if (albumTracks && token) {
+          try {
+            const trackIds = getAlbumTrackIds(albumTracks);
+  
+            if (trackIds.length > 0) {
+              fetchSeveralTracks(token, trackIds);
+            }
+          } catch (error) {
+            console.error('Failed to fetch several tracks:', error);
+          }
+        }
+      };
+
+      getSeveralTracksFromAlbum();
+
+    }, [albumTracks, fetchSeveralTracks])
+
+
+
   return (
 
     <div className="bg-gray-800 rounded-lg shadow-xl overflow-hidden border border-gray-700">
       <div className="px-6 py-4 border-b border-gray-700">
         <h3 className="text-xl font-bold text-gray-100">
-          Album Tracks ({albumTracks.total} total)
+          {title}
         </h3>
         <p className="text-sm text-gray-400">
           Showing {albumTracks.items.length} tracks (offset: {albumTracks.offset})

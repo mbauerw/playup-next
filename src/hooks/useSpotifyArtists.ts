@@ -88,6 +88,7 @@ export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
     try {
       const data = await spotifyArtists.getArtistAlbums(accessToken, artistId, options);
       setArtistAlbums(data);
+      console.log("fetchArtistAlbums: ", data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch artist albums');
     } finally {
@@ -105,6 +106,7 @@ export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
     try {
       const data = await spotifyArtists.getArtistTopTracks(accessToken, artistId, market);
       setArtistTopTracks(data);
+      console.log("fetchArtistTopTracks: ", data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch artist top tracks');
     } finally {
