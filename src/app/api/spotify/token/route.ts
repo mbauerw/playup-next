@@ -7,7 +7,6 @@ import { authOptions } from '@/lib/auth'; // Import your auth config
 
 export async function GET() {
   try {
-    // Pass the authOptions to getServerSession
     const session = await getServerSession(authOptions);
     
     console.log("Token route - session exists:", !!session);
