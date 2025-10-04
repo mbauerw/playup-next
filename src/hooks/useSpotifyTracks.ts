@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { spotifyTracks } from '@/services/spotify/tracks';
 import type { SavedTracks, SpotifyTrack, MultipleTracks, LimitOffsetParams } from '@/types';
+import { useSpotifyContext } from '@/contexts/SpotifyContext';
 
 interface UseSpotifyTracksReturn {
   // State
@@ -12,14 +13,16 @@ interface UseSpotifyTracksReturn {
   error: string | null;
 
   // Actions
-  fetchTrack: (accessToken: string, trackId: string, market?: string) => Promise<void>;
-  fetchSavedTracks: (accessToken: string, options?: { limit?: number; offset?: number; market?: string }) => Promise<void>;
-  fetchSeveralTracks: (accessToken: string, trackIds: string[], market?: string) => Promise<void>;
-  checkSavedStatus: (accessToken: string, trackIds: string[], market?: string) => Promise<void>;
+  fetchTrack: (trackId: string, market?: string) => Promise<void>;
+  fetchSavedTracks: (options?: { limit?: number; offset?: number; market?: string }) => Promise<void>;
+  fetchSeveralTracks: (trackIds: string[], market?: string) => Promise<void>;
+  checkSavedStatus: (trackIds: string[], market?: string) => Promise<void>;
   clearData: () => void;
 }
 
 export const useSpotifyTracks = (): UseSpotifyTracksReturn => {
+  const { getAccessToken } = useSpotifyContext();
+
   const [savedTracks, setSavedTracks] = useState<SavedTracks | null>(null);
   const [singleTrack, setSingleTrack] = useState<SpotifyTrack | null>(null);
   const [multipleTracks, setMultipleTracks] = useState<MultipleTracks | null>(null);
@@ -28,13 +31,13 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchTrack = useCallback(async (
-    accessToken: string,
     trackId: string,
     market?: string
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyTracks.getTrack(accessToken, trackId, market);
       setSingleTrack(data);
     } catch (err) {
@@ -45,7 +48,6 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturn => {
   }, []);
 
   const fetchSavedTracks = useCallback(async (
-    accessToken: string,
     options?: {
       limit?: number,
       offset?: number,
@@ -55,6 +57,7 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturn => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyTracks.getSavedTracks(accessToken, options);
       setSavedTracks(data);
     } catch (err) {
@@ -65,13 +68,13 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturn => {
   }, []);
 
   const fetchSeveralTracks = useCallback(async (
-    accessToken: string,
     trackIds: string[],
     market?: string
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyTracks.getSeveralTracks(accessToken, trackIds, market);
       setMultipleTracks(data);
     } catch (err) {
@@ -82,13 +85,13 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturn => {
   }, []);
 
   const checkSavedStatus = useCallback(async (
-    accessToken: string,
     trackIds: string[],
     market?: string
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyTracks.checkUsersSavedTracks(accessToken, trackIds, market);
       setSavedTrackStatus(data);
     } catch (err) {

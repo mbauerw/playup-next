@@ -50,7 +50,7 @@ const AlbumTracksTable: React.FC<AlbumTracksTableProps> = ({ album, handleChange
       const token = await getAccessToken();
       const trackIds = getAlbumTrackIds(albumTracks);
       if (trackIds.length > 0) {
-        await fetchSeveralTracks(token, trackIds);
+        await fetchSeveralTracks(trackIds);
       }
     };
     getSeveralTracks();

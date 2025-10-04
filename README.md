@@ -1,3 +1,23 @@
+ReGroove
+
+Remix your favorite but tired playlists by getting new songs from the same artists. 
+
+## Authentication
+
+This project uses NextAuth.js with Spotify OAuth. The authentication 
+configuration is not included in this repository for security reasons.
+
+To set up your own auth:
+1. Create a Spotify Developer app
+2. Set up NextAuth with Spotify provider
+3. Configure the following scopes: 'user-read-private user-read-email playlist-read-private playlist-modify-private user-library-read user-follow-read user-read-recently-played'
+
+
+
+
+
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

@@ -211,8 +211,7 @@ const ApiPanel = ({
   // track api
   const handleFetchSingleTrack = async () => {
     try {
-      const currentToken = await getFreshToken();
-      fetchTrack(currentToken, trackId, market || undefined);
+      fetchTrack(trackId, market || undefined);
     } catch (error) {
       console.error('Failed to get token for track fetch:', error);
     }
@@ -230,8 +229,8 @@ const ApiPanel = ({
 
   const handleGetSingleTrack = async () => {
     try {
-      const currentToken = await getFreshToken();
-      await fetchTrack(currentToken, singleTrackId, singleTrackMarket || undefined);
+      
+      await fetchTrack(singleTrackId, singleTrackMarket || undefined);
       setSingleTrackDialogOpen(false);
     } catch (error) {
       console.error('Failed to fetch single track:', error);
@@ -252,7 +251,7 @@ const ApiPanel = ({
     try {
       const currentToken = await getFreshToken();
       const trackIdsArray = severalTrackIds.split(',').map(id => id.trim()).filter(id => id.length > 0);
-      await fetchSeveralTracks(currentToken, trackIdsArray, severalTracksMarket || undefined);
+      await fetchSeveralTracks(trackIdsArray, severalTracksMarket || undefined);
       setSeveralTracksDialogOpen(false);
     } catch (error) {
       console.error('Failed to fetch several tracks:', error);
@@ -295,8 +294,7 @@ const ApiPanel = ({
 
   const handleGetSavedTracks = async () => {
     try {
-      const currentToken = await getFreshToken();
-      fetchSavedTracks(currentToken, {
+      fetchSavedTracks( {
         limit: savedTracksLimit,
         offset: savedTracksOffset
       });
@@ -453,7 +451,7 @@ const ApiPanel = ({
           const trackIds = getAlbumTrackIds(albumTracks);
 
           if (trackIds.length > 0) {
-            fetchSeveralTracks(currentToken, trackIds, albumTracksMarket || undefined);
+            fetchSeveralTracks(trackIds, albumTracksMarket || undefined);
           }
         } catch (error) {
           console.error('Failed to fetch several tracks:', error);
