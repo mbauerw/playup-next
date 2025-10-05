@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import { spotifyApi } from '@/services/spotify';
+import { useSpotifyContext } from '@/contexts/SpotifyContext';
+
 
 // Define search result types
 interface SearchResults {

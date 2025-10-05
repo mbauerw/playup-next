@@ -6,6 +6,8 @@ import type {
   CurrentUserPlaylists,
   CreatePlaylistData 
 } from '@/types';
+import { useSpotifyContext } from '@/contexts/SpotifyContext';
+
 
 interface UseSpotifyPlaylistsReturn {
   // State

@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { spotifyUsers } from '@/services/spotify/users';
 import type { CurrentUser, UserTopItems, FollowedArtists } from '@/types';
+import { useSpotifyContext } from '@/contexts/SpotifyContext';
+
 
 interface UseSpotifyUsersReturn {
   // State

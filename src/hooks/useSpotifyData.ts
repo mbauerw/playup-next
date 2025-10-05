@@ -3,6 +3,8 @@
 import { useState, useCallback } from 'react';
 import { spotifyApi, spotifyUsers, spotifyPlaylists, spotifyArtists, spotifyTracks } from '@/services/spotify';
 import type { CurrentUser, CurrentUserPlaylists, SpotifyArtist } from '@/types';
+import { useSpotifyContext } from '@/contexts/SpotifyContext';
+
 
 export const useSpotifyProfile = (token: string | null) => {
   const [profile, setProfile] = useState<CurrentUser | null>(null);
