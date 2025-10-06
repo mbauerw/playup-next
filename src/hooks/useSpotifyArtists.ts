@@ -14,10 +14,9 @@ interface UseSpotifyArtistsReturn {
   error: string | null;
 
   // Actions
-  fetchArtist: (accessToken: string, artistId: string) => Promise<void>;
-  fetchSeveralArtists: (accessToken: string, artistIds: string[]) => Promise<void>;
+  fetchArtist: (artistId: string) => Promise<void>;
+  fetchSeveralArtists: (artistIds: string[]) => Promise<void>;
   fetchArtistAlbums: (
-    accessToken: string,
     artistId: string,
     options?: {
       include_groups?: string;
@@ -27,7 +26,6 @@ interface UseSpotifyArtistsReturn {
     }
   ) => Promise<void>;
   fetchArtistTopTracks: (
-    accessToken: string,
     artistId: string,
     market?: string
   ) => Promise<void>;
@@ -35,6 +33,8 @@ interface UseSpotifyArtistsReturn {
 }
 
 export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
+  const { getAccessToken } = useSpotifyContext();
+
   const [artist, setArtist] = useState<SpotifyArtist | null>(null);
   const [artists, setArtists] = useState<SpotifyArtist[] | null>(null);
   const [artistAlbums, setArtistAlbums] = useState<ArtistAlbums | null>(null);
@@ -43,12 +43,12 @@ export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchArtist = useCallback(async (
-    accessToken: string,
     artistId: string
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyArtists.getArtist(accessToken, artistId);
       setArtist(data);
     } catch (err) {
@@ -59,12 +59,12 @@ export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
   }, []);
 
   const fetchSeveralArtists = useCallback(async (
-    accessToken: string,
     artistIds: string[]
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const idsString = artistIds.join(',');
       const data = await spotifyArtists.getSeveralArtists(accessToken, idsString);
       setArtists(data);
@@ -76,7 +76,6 @@ export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
   }, []);
 
   const fetchArtistAlbums = useCallback(async (
-    accessToken: string,
     artistId: string,
     options?: {
       include_groups?: string;
@@ -88,6 +87,7 @@ export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyArtists.getArtistAlbums(accessToken, artistId, options);
       setArtistAlbums(data);
       console.log("fetchArtistAlbums: ", data);
@@ -99,13 +99,13 @@ export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
   }, []);
 
   const fetchArtistTopTracks = useCallback(async (
-    accessToken: string,
     artistId: string,
     market?: string
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyArtists.getArtistTopTracks(accessToken, artistId, market);
       setArtistTopTracks(data);
       console.log("fetchArtistTopTracks: ", data);

@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import { spotifyAlbums } from '@/services/spotify/albums';
+import { useSpotifyContext } from '@/contexts/SpotifyContext';
+
 import type { 
   SpotifyAlbum, 
   MultipleAlbums,
@@ -17,10 +19,9 @@ interface UseSpotifyAlbumsReturn {
   error: string | null;
 
   // Actions
-  fetchAlbum: (accessToken: string, albumId: string, market?: string) => Promise<void>;
-  fetchAlbums: (accessToken: string, albumIds: string[], market?: string) => Promise<void>;
+  fetchAlbum: ( albumId: string, market?: string) => Promise<void>;
+  fetchAlbums: (albumIds: string[], market?: string) => Promise<void>;
   fetchAlbumTracks: (
-    accessToken: string, 
     albumId: string,
     options?: { 
       market?: string;
@@ -29,7 +30,6 @@ interface UseSpotifyAlbumsReturn {
     }
   ) => Promise<void>;
   fetchSavedAlbums: (
-    accessToken: string,
     options?: { 
       limit?: number;
       offset?: number;
@@ -40,6 +40,8 @@ interface UseSpotifyAlbumsReturn {
 }
 
 export const useSpotifyAlbums = (): UseSpotifyAlbumsReturn => {
+  const { getAccessToken } = useSpotifyContext();
+
   const [album, setAlbum] = useState<SpotifyAlbum | null>(null);
   const [albums, setAlbums] = useState<MultipleAlbums | null>(null);
   const [albumTracks, setAlbumTracks] = useState<AlbumTracks | null>(null);
@@ -48,13 +50,13 @@ export const useSpotifyAlbums = (): UseSpotifyAlbumsReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchAlbum = useCallback(async (
-    accessToken: string,
     albumId: string,
     market?: string
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyAlbums.getAlbum(accessToken, albumId, market);
       setAlbum(data);
     } catch (err) {
@@ -65,13 +67,13 @@ export const useSpotifyAlbums = (): UseSpotifyAlbumsReturn => {
   }, []);
 
   const fetchAlbums = useCallback(async (
-    accessToken: string,
     albumIds: string[],
     market?: string
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyAlbums.getAlbums(accessToken, albumIds, market);
       setAlbums(data);
     } catch (err) {
@@ -82,7 +84,6 @@ export const useSpotifyAlbums = (): UseSpotifyAlbumsReturn => {
   }, []);
 
   const fetchAlbumTracks = useCallback(async (
-    accessToken: string,
     albumId: string,
     options?: { 
       market?: string;
@@ -93,6 +94,7 @@ export const useSpotifyAlbums = (): UseSpotifyAlbumsReturn => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyAlbums.getAlbumTracks(accessToken, albumId, options);
       setAlbumTracks(data);
     } catch (err) {
@@ -103,7 +105,6 @@ export const useSpotifyAlbums = (): UseSpotifyAlbumsReturn => {
   }, []);
 
   const fetchSavedAlbums = useCallback(async (
-    accessToken: string,
     options?: { 
       limit?: number;
       offset?: number;
@@ -113,6 +114,7 @@ export const useSpotifyAlbums = (): UseSpotifyAlbumsReturn => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyAlbums.getSavedAlbums(accessToken, options);
       setSavedAlbums(data);
     } catch (err) {

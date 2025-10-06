@@ -249,7 +249,6 @@ const ApiPanel = ({
 
   const handleGetSeveralTracks = async () => {
     try {
-      const currentToken = await getFreshToken();
       const trackIdsArray = severalTrackIds.split(',').map(id => id.trim()).filter(id => id.length > 0);
       await fetchSeveralTracks(trackIdsArray, severalTracksMarket || undefined);
       setSeveralTracksDialogOpen(false);
@@ -270,8 +269,7 @@ const ApiPanel = ({
 
   const handleGetArtistAlbums = async () => {
     try {
-      const currentToken = await getFreshToken();
-      await fetchArtistAlbums(currentToken, artistAlbumsId, {
+      await fetchArtistAlbums(artistAlbumsId, {
         include_groups: artistAlbumsIncludeGroups || undefined,
         market: artistAlbumsMarket || undefined,
         limit: artistAlbumsLimit,
@@ -316,7 +314,6 @@ const ApiPanel = ({
 
   const handleGetRecentTracks = async () => {
     try {
-      const currentToken = await getFreshToken();
 
       const options: { limit?: number, after?: number, before?: number } = {
         limit: recentTracksLimit
@@ -337,7 +334,7 @@ const ApiPanel = ({
         }
       }
 
-      fetchRecentlyPlayed(currentToken, options);
+      fetchRecentlyPlayed(options);
       setRecentTracksDialogOpen(false);
     } catch (error) {
       console.error('Failed to get token for recent tracks:', error);
@@ -356,8 +353,8 @@ const ApiPanel = ({
 
   const handleGetCurrentUserPlaylists = async () => {
     try {
-      const currentToken = await getFreshToken();
-      fetchCurrentUserPlaylists(currentToken, {
+      
+      fetchCurrentUserPlaylists({
         limit: playlistsLimit,
         offset: playlistsOffset
       });
@@ -369,8 +366,8 @@ const ApiPanel = ({
 
   const handleFetchArtistTopTracks = async (artistId: string, market?: string): Promise<MultipleTracks | null> => {
     try {
-      const currentToken = await getFreshToken();
-      await fetchArtistTopTracks(currentToken, artistId, market);
+      
+      await fetchArtistTopTracks(artistId, market);
       return artistTopTracks;
     }
     catch (error) {
@@ -391,11 +388,11 @@ const ApiPanel = ({
 
   const handleGetAlbum = async (customAlbumId?: string, market?: string ) => {
     try {
-      const currentToken = await getFreshToken();
+      
 
       const idToUse = customAlbumId || albumId
 
-      await fetchAlbum(currentToken, idToUse, market);
+      await fetchAlbum(idToUse, market);
 
     } catch (error) {
       console.error('Failed to fetch album tracks:', error);
@@ -421,11 +418,10 @@ const ApiPanel = ({
 
   const handleGetArtistTopTracks = async () => {
     try {
-      const currentToken = await getFreshToken();
+      
       console.log("Aritst Top Track ID: " + artistTopTracksId);
       console.log("Hurmph")
       await fetchArtistTopTracks(
-        currentToken,
         artistTopTracksId,
         artistTopTracksMarket || undefined
       );
@@ -447,7 +443,7 @@ const ApiPanel = ({
     const fetchSeveralTracksWithToken = async () => {
       if (albumTracks && albumTracks.items.length > 0) {
         try {
-          const currentToken = await getFreshToken();
+          
           const trackIds = getAlbumTrackIds(albumTracks);
 
           if (trackIds.length > 0) {

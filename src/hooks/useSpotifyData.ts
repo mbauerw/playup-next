@@ -7,6 +7,8 @@ import { useSpotifyContext } from '@/contexts/SpotifyContext';
 
 
 export const useSpotifyProfile = (token: string | null) => {
+  const { getAccessToken } = useSpotifyContext();
+
   const [profile, setProfile] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

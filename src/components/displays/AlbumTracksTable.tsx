@@ -38,7 +38,7 @@ const AlbumTracksTable: React.FC<AlbumTracksTableProps> = ({ album, handleChange
   useEffect(() => {
     const getAlbumTracks = async () => {
       const token = await getAccessToken();
-      await fetchAlbumTracks(token, album.id);
+      await fetchAlbumTracks(album.id);
     }
     getAlbumTracks();
   }, [album.id])

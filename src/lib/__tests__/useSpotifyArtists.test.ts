@@ -1,11 +1,11 @@
-// hooks/__tests__/useSpotifyArtists.test.ts
+// src/lib/__tests__/useSpotifyArtists.test.ts
 import { renderHook, waitFor } from '@testing-library/react';
 import { act } from 'react';
 import { useSpotifyArtists } from '../../hooks/useSpotifyArtists';
 import { spotifyArtists } from '@/services/spotify/artists';
 import { createMockSpotifyArtist } from '@/lib/test-utils/fixtures';
 
-// Mock the spotify service
+// Mock the Spotify service
 jest.mock('@/services/spotify/artists', () => ({
   spotifyArtists: {
     getArtist: jest.fn(),
@@ -13,6 +13,17 @@ jest.mock('@/services/spotify/artists', () => ({
     getArtistAlbums: jest.fn(),
     getArtistTopTracks: jest.fn(),
   }
+}));
+
+// Mock the context
+jest.mock('@/contexts/SpotifyContext', () => ({
+  useSpotifyContext: jest.fn(() => ({
+    accessToken: 'mock-token',
+    getAccessToken: jest.fn().mockResolvedValue('mock-token'),
+    isAuthenticated: true,
+    isLoading: false,
+    tokenError: null,
+  })),
 }));
 
 const mockSpotifyArtists = spotifyArtists as jest.Mocked<typeof spotifyArtists>;
@@ -36,10 +47,10 @@ describe('useSpotifyArtists', () => {
       expect(result.current.loading).toBe(false);
 
       await act(async () => {
-        await result.current.fetchArtist('token', 'artist-123');
+        await result.current.fetchArtist('artist-123');
       });
 
-      expect(mockSpotifyArtists.getArtist).toHaveBeenCalledWith('token', 'artist-123');
+      expect(mockSpotifyArtists.getArtist).toHaveBeenCalledWith('mock-token', 'artist-123');
       expect(result.current.artist).toEqual(mockArtist);
       expect(result.current.loading).toBe(false);
       expect(result.current.error).toBeNull();
@@ -52,7 +63,7 @@ describe('useSpotifyArtists', () => {
       const { result } = renderHook(() => useSpotifyArtists());
 
       await act(async () => {
-        await result.current.fetchArtist('token', 'artist-123');
+        await result.current.fetchArtist('artist-123');
       });
 
       expect(result.current.artist).toBeNull();
@@ -69,7 +80,7 @@ describe('useSpotifyArtists', () => {
       const { result } = renderHook(() => useSpotifyArtists());
 
       await act(async () => {
-        await result.current.fetchArtist('token', 'artist-123');
+        await result.current.fetchArtist('artist-123');
       });
 
       expect(result.current.artist).not.toBeNull();

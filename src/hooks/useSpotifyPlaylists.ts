@@ -21,28 +21,23 @@ interface UseSpotifyPlaylistsReturn {
   error: string | null;
 
   // Actions
-  fetchPlaylist: (accessToken: string, playlistId: string) => Promise<void>;
+  fetchPlaylist: (playlistId: string) => Promise<void>;
   fetchPlaylistItems: (
-    accessToken: string, 
     playlistId: string,
     options?: { limit?: number; offset?: number }
   ) => Promise<void>;
   fetchCurrentUserPlaylists: (
-    accessToken: string,
     options?: { limit?: number; offset?: number }
   ) => Promise<void>;
   fetchUserPlaylists: (
-    accessToken: string, 
     userId: string,
     options?: { limit?: number; offset?: number }
   ) => Promise<void>;
-  createPlaylist: (
-    accessToken: string, 
+  createPlaylist: ( 
     userId: string, 
     data: CreatePlaylistData
   ) => Promise<void>;
   addItemsToPlaylist: (
-    accessToken: string, 
     playlistId: string, 
     trackUris: string[]
   ) => Promise<void>;
@@ -50,6 +45,8 @@ interface UseSpotifyPlaylistsReturn {
 }
 
 export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
+  const { getAccessToken } = useSpotifyContext();
+
   const [playlist, setPlaylist] = useState<SpotifyPlaylist | null>(null);
   const [playlistItems, setPlaylistItems] = useState<PlaylistItems | null>(null);
   const [currentUserPlaylists, setCurrentUserPlaylists] = useState<CurrentUserPlaylists | null>(null);
@@ -60,12 +57,12 @@ export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchPlaylist = useCallback(async (
-    accessToken: string,
     playlistId: string
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyPlaylists.getPlaylist(accessToken, playlistId);
       setPlaylist(data);
     } catch (err) {
@@ -76,13 +73,13 @@ export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
   }, []);
 
   const fetchPlaylistItems = useCallback(async (
-    accessToken: string,
     playlistId: string,
     options?: { limit?: number; offset?: number }
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyPlaylists.getPlaylistItems(accessToken, playlistId, options);
       setPlaylistItems(data);
     } catch (err) {
@@ -93,12 +90,12 @@ export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
   }, []);
 
   const fetchCurrentUserPlaylists = useCallback(async (
-    accessToken: string,
     options?: { limit?: number; offset?: number }
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyPlaylists.getCurrentUserPlaylists(accessToken, options);
       setCurrentUserPlaylists(data);
     } catch (err) {
@@ -109,13 +106,13 @@ export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
   }, []);
 
   const fetchUserPlaylists = useCallback(async (
-    accessToken: string,
     userId: string,
     options?: { limit?: number; offset?: number }
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const data = await spotifyPlaylists.getUserPlaylists(accessToken, userId, options);
       setUserPlaylists(data);
     } catch (err) {
@@ -126,13 +123,13 @@ export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
   }, []);
 
   const createPlaylist = useCallback(async (
-    accessToken: string,
     userId: string,
     data: CreatePlaylistData
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const result = await spotifyPlaylists.createPlaylist(accessToken, userId, data);
       setCreatedPlaylist(result);
     } catch (err) {
@@ -143,13 +140,13 @@ export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
   }, []);
 
   const addItemsToPlaylist = useCallback(async (
-    accessToken: string,
     playlistId: string,
     trackUris: string[]
   ) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
       const result = await spotifyPlaylists.addItemsToPlaylist(accessToken, playlistId, trackUris);
       setAddItemsResponse(result);
     } catch (err) {
