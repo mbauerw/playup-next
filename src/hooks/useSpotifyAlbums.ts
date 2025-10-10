@@ -28,7 +28,7 @@ interface UseSpotifyAlbumsReturn {
       limit?: number;
       offset?: number;
     }
-  ) => Promise<void>;
+  ) => Promise<AlbumTracks | null>;
   fetchSavedAlbums: (
     options?: { 
       limit?: number;
@@ -97,8 +97,10 @@ export const useSpotifyAlbums = (): UseSpotifyAlbumsReturn => {
       const accessToken = await getAccessToken();
       const data = await spotifyAlbums.getAlbumTracks(accessToken, albumId, options);
       setAlbumTracks(data);
+      return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch album tracks');
+      return null;
     } finally {
       setLoading(false);
     }

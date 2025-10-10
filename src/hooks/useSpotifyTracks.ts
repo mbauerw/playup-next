@@ -15,7 +15,7 @@ interface UseSpotifyTracksReturn {
   // Actions
   fetchTrack: (trackId: string, market?: string) => Promise<void>;
   fetchSavedTracks: (options?: { limit?: number; offset?: number; market?: string }) => Promise<void>;
-  fetchSeveralTracks: (trackIds: string[], market?: string) => Promise<void>;
+  fetchSeveralTracks: (trackIds: string[], market?: string) => Promise<MultipleTracks | null>;
   checkSavedStatus: (trackIds: string[], market?: string) => Promise<void>;
   clearData: () => void;
 }
@@ -70,15 +70,17 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturn => {
   const fetchSeveralTracks = useCallback(async (
     trackIds: string[],
     market?: string
-  ) => {
+  ): Promise<MultipleTracks | null> => {
     setLoading(true);
     setError(null);
     try {
       const accessToken = await getAccessToken();
       const data = await spotifyTracks.getSeveralTracks(accessToken, trackIds, market);
       setMultipleTracks(data);
+      return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch several tracks');
+      return null;
     } finally {
       setLoading(false);
     }

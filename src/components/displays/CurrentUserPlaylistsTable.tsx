@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CurrentUserPlaylists, SpotifyPlaylist, MultipleTracks, PlaylistArtists, PlaylistTopArtists } from '@/types';
 import MultipleTracksTable from './MultipleTracksTable';
-import { getPlaylistTopArtists } from '@/lib/analysis/parsers/parseSpotifyPlaylist';
+import { getPlaylistTopArtists } from '@/lib/parsers/parseSpotifyPlaylist';
 import PlaylistTopArtistsTable from './PlaylistTopArtistsTable';
+import { useGetRecommendations } from '@/hooks/useGetRecommendations';
 
 interface CurrentUserPlaylistsTableProps {
   currentUserPlaylists: CurrentUserPlaylists;
@@ -31,6 +32,15 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
   const [playlistTopArtists, setPlaylistTopArtists] = useState<PlaylistTopArtists>();
   const [artistTopTracks, setArtistTopTracks] = useState<MultipleTracks>();
 
+  const [userSelectedPlaylist, setUserSelectedPlaylist] = useState<SpotifyPlaylist>();
+
+  const {
+    sourceAlbumTracks,
+    fetchSourceTracks,
+    error,
+    loading
+  } = useGetRecommendations(userSelectedPlaylist ? {playlist: userSelectedPlaylist} : { inputTracks: { tracks: []}});
+ 
   const handleGetPlaylistTracks = async (playlist: SpotifyPlaylist, token: string | null) => {
     if (getPlaylistTracks && token) {
       try {
@@ -71,6 +81,17 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
     }
   }
 
+  const handleGetRecommendations = (playlist: SpotifyPlaylist) => {
+    setUserSelectedPlaylist(playlist);
+  }
+
+  useEffect(() => {
+    if (userSelectedPlaylist){
+      fetchSourceTracks();
+    }
+
+  }, [userSelectedPlaylist, fetchSourceTracks]);
+
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b">
@@ -90,6 +111,9 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Owner
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Get Recommendations
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Tracks
@@ -128,6 +152,10 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {playlist.owner.display_name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <button className='bg-violet-600 shadow-md hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 
+                      border border-solid border-gray-600 rounded-md px-2 text-gray-900 font-medium transition-all duration-600' onClick={() => handleGetRecommendations(playlist)}> Get Recommendations</button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {playlist.tracks.total}
@@ -169,6 +197,9 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
         {playlistTopArtists &&
           <PlaylistTopArtistsTable topArtists={playlistTopArtists} />
         }
+        {sourceAlbumTracks &&
+          <MultipleTracksTable tracks={sourceAlbumTracks} handleChangeTrack={handleChangeTrack}/>
+          }
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ import type {
 } from '@/types';
 
 export const spotifyAlbums = {
-  // Get Album
+
   async getAlbum(
     accessToken: string, 
     albumId: string, 
@@ -20,7 +20,6 @@ export const spotifyAlbums = {
     );
   },
 
-  // Get Albums (Multiple Albums)
   async getAlbums(
     accessToken: string, 
     albumIds: string[],
@@ -36,7 +35,6 @@ export const spotifyAlbums = {
     );
   },
 
-  // Get Album Tracks
   async getAlbumTracks(
     accessToken: string, 
     albumId: string,
@@ -58,7 +56,6 @@ export const spotifyAlbums = {
     );
   },
 
-  // Get User's Saved Albums
   async getSavedAlbums(
     accessToken: string,
     options?: { 

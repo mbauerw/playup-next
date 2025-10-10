@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { AlbumTracks, MultipleTracks, SpotifyAlbum } from '@/types';
-import { getAlbumTrackIds } from '@/lib/analysis/parsers/parseAlbumTracks';
+import { getAlbumTrackIds } from '@/lib/parsers/parseAlbumTracks';
 import { useSpotifyTracks } from '@/hooks';
 import { useSpotifyAuth } from '@/hooks';
 import { useSpotifyAlbums } from '@/hooks';
@@ -37,7 +37,6 @@ const AlbumTracksTable: React.FC<AlbumTracksTableProps> = ({ album, handleChange
 
   useEffect(() => {
     const getAlbumTracks = async () => {
-      const token = await getAccessToken();
       await fetchAlbumTracks(album.id);
     }
     getAlbumTracks();
@@ -47,7 +46,7 @@ const AlbumTracksTable: React.FC<AlbumTracksTableProps> = ({ album, handleChange
     if (!albumTracks) return;
 
     const getSeveralTracks = async () => {
-      const token = await getAccessToken();
+      
       const trackIds = getAlbumTrackIds(albumTracks);
       if (trackIds.length > 0) {
         await fetchSeveralTracks(trackIds);

@@ -1,4 +1,4 @@
-import { SpotifyPlaylist, SpotifyArtist, SpotifyAlbum, SpotifyTrack, MultipleTracks, PlaylistItems, PlaylistTrack, PlaylistArtists, PlaylistTopArtists } from "@/types";
+import { SpotifyPlaylist, SpotifyArtist, SpotifyAlbum, SpotifyTrack, MultipleTracks, PlaylistItems, PlaylistTrack, PlaylistArtists, PlaylistTopArtists, MultipleAlbums } from "@/types";
 import { spotifyPlaylists } from "@/services/spotify";
 import { rankSongPopularity } from "./parseAlbumTracks";
 
@@ -73,6 +73,25 @@ export const getPlaylistTopArtists = (
     counts: topCounts
   };
 };
+
+export const getPlaylistAlbums = async (
+  playlist: SpotifyPlaylist | string,
+  token: string,
+  options?: { 
+    market?: string,
+    fields?: string,
+    limit?: number,
+    offset?: number,
+    additional_types?: string }
+): Promise<MultipleAlbums> => {
+  
+  const tracks = await getPlaylistTracks(playlist, token, options);
+  const albums = tracks.tracks
+    .filter(track => track !== null)
+    .map(track => track.album)
+
+  return {albums};
+}
 
 
 export const rankPlaylistTracks = async (playlist: SpotifyPlaylist, token: string, options?: { limit?: number, offset?: number }): Promise<MultipleTracks> => {

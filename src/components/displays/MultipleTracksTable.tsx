@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MultipleTracks, AlbumTrack, AlbumTracks, SpotifyAlbum } from '@/types';
-import { getAlbumTrackIds } from '@/lib/analysis/parsers/parseAlbumTracks';
+import { getAlbumTrackIds } from '@/lib/parsers/parseAlbumTracks';
 import AlbumTracksTable from './AlbumTracksTable';
 import { useSpotifyAlbums } from '@/hooks';
 import { useSpotifyAuth } from '@/hooks';

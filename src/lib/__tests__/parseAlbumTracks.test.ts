@@ -1,5 +1,5 @@
 import { MultipleTracks } from '@/types';
-import { rankSongPopularity } from '../analysis/parsers/parseAlbumTracks';
+import { rankSongPopularity } from '../parsers/parseAlbumTracks';
 
 describe('rankSongPopularity', () => {
   it('should sort tracks by popularity in descending order', () => {

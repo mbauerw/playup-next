@@ -1,6 +1,6 @@
-import { getPlaylistTracks, getPlaylistArtists, rankPlaylistTracks } from '../analysis/parsers/parseSpotifyPlaylist'
+import { getPlaylistTracks, getPlaylistArtists, rankPlaylistTracks } from '../parsers/parseSpotifyPlaylist'
 import { spotifyPlaylists } from '@/services/spotify';
-import { rankSongPopularity } from '../analysis/parsers/parseAlbumTracks';
+import { rankSongPopularity } from '../parsers/parseAlbumTracks';
 import { MultipleTracks, SpotifyPlaylist } from '@/types';
 import { createMockSpotifyArtist } from '@/lib/test-utils/fixtures';
 

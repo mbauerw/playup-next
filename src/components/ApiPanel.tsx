@@ -14,8 +14,8 @@ import CurrentUserPlaylistsTable from './displays/CurrentUserPlaylistsTable';
 import AlbumTracksTable from './displays/AlbumTracksTable';
 import MultipleTracksTable from './displays/MultipleTracksTable';
 import { Spotify } from 'react-spotify-embed';
-import parseAlbumTracks, { getAlbumTrackIds, rankSongPopularity } from '@/lib/analysis/parsers/parseAlbumTracks';
-import { getPlaylistArtists, getPlaylistTopArtists, getPlaylistTracks, rankPlaylistTracks } from '@/lib/analysis/parsers/parseSpotifyPlaylist';
+import parseAlbumTracks, { getAlbumTrackIds, rankSongPopularity } from '@/lib/parsers/parseAlbumTracks';
+import { getPlaylistArtists, getPlaylistTopArtists, getPlaylistTracks, rankPlaylistTracks } from '@/lib/parsers/parseSpotifyPlaylist';
 import SpotifyPlayer from './SpotifyPlayer';
 
 import {
@@ -34,6 +34,7 @@ import {
   DialogContent,
   DialogActions
 } from '@mui/material';
+
 import {
   MoreVert as MoreVertIcon,
   AccountCircle,
@@ -58,6 +59,8 @@ interface MenuState {
   open: boolean;
 }
 
+
+// COMPONENT START
 const ApiPanel = ({
   token,
   loading
@@ -140,7 +143,7 @@ const ApiPanel = ({
   const [recentTracksDialogOpen, setRecentTracksDialogOpen] = useState(false);
 
   // current user playlists params
-  const [playlistsLimit, setPlaylistsLimit] = useState(20);
+  const [playlistsLimit, setPlaylistsLimit] = useState(50);
   const [playlistsOffset, setPlaylistsOffset] = useState(0);
   const [playlistsDialogOpen, setPlaylistsDialogOpen] = useState(false);
 
