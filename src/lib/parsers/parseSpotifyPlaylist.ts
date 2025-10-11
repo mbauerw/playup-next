@@ -16,7 +16,7 @@ export const getPlaylistTracks = async (
   const playlistId = typeof playlist === 'string' ? playlist : playlist.id;
   const items = await spotifyPlaylists.getPlaylistItems(token, playlistId, options);
 
-  console.log("Items from getPlaylistTracks:" + JSON.stringify(items));
+  // console.log("Items from getPlaylistTracks:" + JSON.stringify(items));
 
   const tracks = items.items
     .map(playlistTrack => playlistTrack.track)

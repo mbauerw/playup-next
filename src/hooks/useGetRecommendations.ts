@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { spotifyArtists } from '@/services/spotify/artists';
-import { type SpotifyArtist, type ArtistAlbums, type MultipleTracks, type SpotifyPlaylist, MultipleAlbums, AlbumTracks } from '@/types';
+import type { SpotifyArtist, ArtistAlbums, MultipleTracks, SpotifyPlaylist, MultipleAlbums, AlbumTracks, SpotifyTrack } from '@/types';
 import { useSpotifyContext } from '@/contexts/SpotifyContext';
 import { useSpotifyTracks } from './useSpotifyTracks';
 import { useSpotifyAlbums } from './useSpotifyAlbums';
@@ -9,10 +9,8 @@ import { getMultipleTrackAlbums, rankSongPopularity } from '@/lib/parsers/parseS
 import { getAlbumTrackIds } from '@/lib/parsers/parseAlbumTracks';
 
 
-export const useGetRecommendations = (params:
-  | { playlist: SpotifyPlaylist; inputTracks?: never }
-  | { playlist?: never; inputTracks: MultipleTracks }
-) => {
+
+export const useGetRecommendations = () => {
   const { getAccessToken } = useSpotifyContext();
 
   // tracks hooks
@@ -49,54 +47,38 @@ export const useGetRecommendations = (params:
   const [recommendedTracks, setRecommendedTracks] = useState<MultipleTracks>();
   const [sourceAlbums, setSourceAlbums] = useState<MultipleAlbums>();
 
-  useEffect(() => {
-    const setTracks = async () => {
+  const loadPlaylistTracks = useCallback(async (playlist: SpotifyPlaylist) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = await getAccessToken();
+      const playTracks = await getPlaylistTracks(playlist, token);
+      setSourceTracks(playTracks);
+      console.log("sourced playlist");
+      return playTracks;
+    } catch (err) {
+      console.log(err);
+      setError(err as Error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [getAccessToken]);
 
-      if (!params.playlist && !params.inputTracks) {
-        console.log("No props for recommendations");
-        return;
-      }
+  const loadInputTracks = useCallback((tracks: MultipleTracks) => {
+    setSourceTracks(tracks);
+    console.log("sourced tracks");
+  }, []);
 
-      if (params.playlist) {
-        try {
-          setLoading(true);
-          const token = await getAccessToken();
-          const playTracks = await getPlaylistTracks(params.playlist, token);
-          setSourceTracks(playTracks);
-          console.log("sourced playlist");
-          setError(null);
-          setLoading(false);
-        } catch (err) {
-          console.log(err);
-          setError(err as Error);
-        } finally {
-          setLoading(false);
-        }
-      }
-      else if (params.inputTracks) {
-        setSourceTracks(params.inputTracks);
-        console.log("sourced tracks");
-      }
-
+  const fetchSourceTracks = useCallback(async (
+    tracks: MultipleTracks
+  ): Promise<MultipleTracks | undefined> => {
+    if (!tracks) {
+      console.log("No source tracks available");
+      return;
     }
 
-    setTracks();
-  }, [params.playlist, params.inputTracks, getAccessToken]);
-
-
-  /* 
-  for each album in sourceAlbums:
-    get album.id
-    fetchAlbumTracks for AlbumTracks array
-    getAlbumTrackIds(AlbumTracks)
-    use TrackIds to fetchSeveralTracks
-    append tracks to array of MultipleTracks
-  */
-
-  const fetchSourceTracks = useCallback(async (): Promise<MultipleTracks | undefined> => {
-    if (!sourceTracks) return;
-
-    const albums = getMultipleTrackAlbums(sourceTracks);
+    const albums = getMultipleTrackAlbums(tracks); 
     const combinedTracks: MultipleTracks = { tracks: [] };
 
     setLoading(true);
@@ -109,30 +91,72 @@ export const useGetRecommendations = (params:
         if (!albumTracks) continue;
 
         const albumTrackIds = getAlbumTrackIds(albumTracks);
-
         const fetchedTracks = await fetchSeveralTracks(albumTrackIds);
         if (!fetchedTracks) continue;
+        
         const sortedTracks = rankSongPopularity(fetchedTracks);
+        console.log("\n Sorted Tracks #1:" + JSON.stringify("name: " + sortedTracks.tracks[0].name + " pop: " + sortedTracks.tracks[0].popularity));
+        console.log("\n Sorted Tracks #2:" + JSON.stringify("name: " + sortedTracks.tracks[1].name + " pop: " + sortedTracks.tracks[1].popularity));
+        console.log("\n Sorted Tracks #3:" + JSON.stringify("name: " + sortedTracks.tracks[2].name + " pop: " + sortedTracks.tracks[2].popularity));
 
-        console.log("THE SORTED TRACKS ARE AS FOLLOWS: " + JSON.stringify(sortedTracks.tracks));
-        combinedTracks.tracks.push(...sortedTracks.tracks);
+        // Adjust weights to size of tracks
+        let weights = [3, 3, 3, 3, 2, 2, 2, 2, 1, 1]
+
+        if (sortedTracks.tracks.length > weights.length){
+          weights = [...weights, ...Array(sortedTracks.tracks.length - weights.length).fill(1)];
+        } else {
+          weights = weights.slice(0, sortedTracks.tracks.length);
+        }
+
+        const selectedTrack = weightedRandom(sortedTracks.tracks, weights) as SpotifyTrack;
+
+        console.log("The selected Track is : \n" + JSON.stringify(selectedTrack.name + "\n artist: " + selectedTrack.artists[0] + "\n pop:" + selectedTrack.popularity));
+
+        combinedTracks.tracks.push(selectedTrack);
 
       } catch (err) {
         console.error(err as Error);
+        setError(err as Error);
       }
     }
+    setError(null);
     setLoading(false);
     setSourceAlbumTracks(combinedTracks);
     return combinedTracks;
-  }, [sourceTracks, fetchAlbumTracks, fetchSeveralTracks]);
+  }, [fetchAlbumTracks, fetchSeveralTracks]); 
+
+  const weightedRandom = (items: any, weights: number[])=>{
+    let totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    
+    let random = Math.random() * totalWeight;
+    
+    for (let i = 0; i < items.length; i++) {
+        if (random < weights[i]) {
+            return items[i];
+        }
+        random -= weights[i];
+    }
+
+  }
+  const getRecommendations = useCallback(async (playlist: SpotifyPlaylist) => {
+    const tracks = await loadPlaylistTracks(playlist);
+    if (!tracks) return;
+
+    const recommendations = await fetchSourceTracks(tracks);
+    return recommendations;
+  }, [loadPlaylistTracks, fetchSourceTracks]);
 
   return {
+    sourceTracks,
     sourceAlbumTracks,
-    fetchSourceTracks,
+    loading,
     error,
-    loading
-  }
-}
+    loadPlaylistTracks,
+    loadInputTracks,
+    fetchSourceTracks,
+    getRecommendations,
+  };
+};
 
 
 /*

@@ -14,7 +14,7 @@ export const authOptions: NextAuthOptions = {
     }),
     SpotifyProvider({
       clientId: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!,
-      clientSecret: process.env.SPOTIFY_CLIENT_SECRET!, // Fixed: removed NEXT_PUBLIC_
+      clientSecret: process.env.SPOTIFY_CLIENT_SECRET!,
       authorization: {
         params: {
           scope: 'user-read-private user-read-email playlist-read-private playlist-modify-private user-library-read user-follow-read user-read-recently-played'
@@ -146,24 +146,32 @@ export const authOptions: NextAuthOptions = {
         return false
       }
     },
-    async session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub
-        session.spotifyAccessToken = token.spotifyAccessToken as string
-        session.spotifyTokenExpires = token.spotifyTokenExpires as number
-      }
-      return session
-    },
     async jwt({ token, user, account }) {
+      // If user object exists (sign in), add id to token
+      if (user) {
+        token.id = user.id
+      }
+
+      // Store Spotify tokens in JWT when user signs in with Spotify
       if (account?.provider === 'spotify') {
         token.spotifyAccessToken = account.access_token
         token.spotifyRefreshToken = account.refresh_token
         token.spotifyTokenExpires = account.expires_at
       }
-      if (user) {
-        token.id = user.id
-      }
+
       return token
+    },
+    async session({ session, token }) {
+      // Add user id to session - use token.id instead of token.sub for consistency
+      if (session.user && token.id) {
+        session.user.id = token.id
+      }
+      
+      // Add Spotify token info to session
+      session.spotifyAccessToken = token.spotifyAccessToken as string | undefined
+      session.spotifyTokenExpires = token.spotifyTokenExpires as number | undefined
+      
+      return session
     }
   }
 }

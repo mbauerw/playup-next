@@ -17,6 +17,23 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized - No session' }, { status: 401 });
     }
 
+    // Check if session already has valid token info (avoids DB hit)
+    const now = new Date();
+    const bufferTime = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes from now
+    const bufferTimestamp = Math.floor(bufferTime.getTime() / 1000); // Convert to Unix timestamp
+    
+    if (session.spotifyAccessToken && 
+        session.spotifyTokenExpires && 
+        session.spotifyTokenExpires > bufferTimestamp) {
+      console.log("Token route - returning token from session (no DB hit)");
+      return NextResponse.json({
+        access_token: session.spotifyAccessToken,
+        expires_at: new Date(session.spotifyTokenExpires * 1000) // Convert Unix timestamp to Date
+      });
+    }
+
+    // If not in session or expired, fetch from database
+    console.log("Token route - fetching from database");
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
@@ -38,14 +55,11 @@ export async function GET() {
       );
     }
 
-    // Check if current token is still valid (with 5-minute buffer)
-    const now = new Date();
-    const bufferTime = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes from now
-    
+    // Check if DB token is still valid
     if (user.spotifyAccessToken && 
         user.spotifyTokenExpiry && 
         user.spotifyTokenExpiry > bufferTime) {
-      console.log("Token route - returning existing valid token");
+      console.log("Token route - returning existing valid token from DB");
       return NextResponse.json({
         access_token: user.spotifyAccessToken,
         expires_at: user.spotifyTokenExpiry
@@ -66,13 +80,11 @@ export async function GET() {
   } catch (error) {
     console.error('Token refresh error:', error);
     
-    // Provide more specific error information
     if (error instanceof Error) {
       return NextResponse.json(
         { 
           error: 'Failed to refresh token',
           details: error.message,
-          // Don't expose sensitive info in production
           ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
         },
         { status: 500 }

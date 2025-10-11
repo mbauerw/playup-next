@@ -144,27 +144,32 @@ const handler = NextAuth({
         return false
       }
     },
-    async session({ session, token }) {
-      // Add user id to session
-      if (session.user && token.sub) {
-        session.user.id = token.sub
-        // Optionally add Spotify token info to session
-        session.spotifyAccessToken = token.spotifyAccessToken as string
-        session.spotifyTokenExpires = token.spotifyTokenExpires as number
-      }
-      return session
-    },
     async jwt({ token, user, account }) {
+      // If user object exists (sign in), add id to token
+      if (user) {
+        token.id = user.id
+      }
+
+      // Store Spotify tokens in JWT when user signs in with Spotify
       if (account?.provider === 'spotify') {
         token.spotifyAccessToken = account.access_token
         token.spotifyRefreshToken = account.refresh_token
         token.spotifyTokenExpires = account.expires_at
       }
-      // If user object exists (sign in), add id to token
-      if (user) {
-        token.id = user.id
-      }
+
       return token
+    },
+    async session({ session, token }) {
+      // Add user id to session
+      if (session.user && token.id) {
+        session.user.id = token.id
+      }
+      
+      // Add Spotify token info directly to session (not session.user)
+      session.spotifyAccessToken = token.spotifyAccessToken as string | undefined
+      session.spotifyTokenExpires = token.spotifyTokenExpires as number | undefined
+      
+      return session
     }
   }
 })

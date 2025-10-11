@@ -37,9 +37,10 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
   const {
     sourceAlbumTracks,
     fetchSourceTracks,
+    getRecommendations,
     error,
     loading
-  } = useGetRecommendations(userSelectedPlaylist ? {playlist: userSelectedPlaylist} : { inputTracks: { tracks: []}});
+  } = useGetRecommendations();
  
   const handleGetPlaylistTracks = async (playlist: SpotifyPlaylist, token: string | null) => {
     if (getPlaylistTracks && token) {
@@ -81,16 +82,9 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
     }
   }
 
-  const handleGetRecommendations = (playlist: SpotifyPlaylist) => {
-    setUserSelectedPlaylist(playlist);
+  const handleGetRecommendations = async (playlist: SpotifyPlaylist) => {
+    await getRecommendations(playlist);
   }
-
-  useEffect(() => {
-    if (userSelectedPlaylist){
-      fetchSourceTracks();
-    }
-
-  }, [userSelectedPlaylist, fetchSourceTracks]);
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -197,9 +191,16 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
         {playlistTopArtists &&
           <PlaylistTopArtistsTable topArtists={playlistTopArtists} />
         }
-        {sourceAlbumTracks &&
-          <MultipleTracksTable tracks={sourceAlbumTracks} handleChangeTrack={handleChangeTrack}/>
-          }
+        <div>
+        {error && <div className="text-red-600">Error: {error.message}</div>}
+        {loading && <div>Loading recommendations...</div>}
+        {sourceAlbumTracks && (
+          <MultipleTracksTable 
+            tracks={sourceAlbumTracks} 
+            handleChangeTrack={handleChangeTrack}
+          />
+        )}
+      </div>
       </div>
     </div>
   );
