@@ -1,13 +1,13 @@
+'use client'
+
 import { useState, useCallback } from 'react';
-import { spotifyPlaylists } from '@/services/spotify/playlists';
+import { playlistsAPI } from '@/services/api/playlists';
 import type { 
   SpotifyPlaylist, 
   PlaylistItems, 
   CurrentUserPlaylists,
   CreatePlaylistData 
 } from '@/types';
-import { useSpotifyContext } from '@/contexts/SpotifyContext';
-
 
 interface UseSpotifyPlaylistsReturn {
   // State
@@ -45,8 +45,7 @@ interface UseSpotifyPlaylistsReturn {
 }
 
 export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
-  const { getAccessToken } = useSpotifyContext();
-
+  
   const [playlist, setPlaylist] = useState<SpotifyPlaylist | null>(null);
   const [playlistItems, setPlaylistItems] = useState<PlaylistItems | null>(null);
   const [currentUserPlaylists, setCurrentUserPlaylists] = useState<CurrentUserPlaylists | null>(null);
@@ -56,14 +55,11 @@ export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPlaylist = useCallback(async (
-    playlistId: string
-  ) => {
+  const fetchPlaylist = useCallback(async (playlistId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyPlaylists.getPlaylist(accessToken, playlistId);
+      const data = await playlistsAPI.getPlaylist(playlistId);
       setPlaylist(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch playlist');
@@ -79,8 +75,7 @@ export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyPlaylists.getPlaylistItems(accessToken, playlistId, options);
+      const data = await playlistsAPI.getPlaylistItems(playlistId, options);
       setPlaylistItems(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch playlist items');
@@ -95,8 +90,7 @@ export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyPlaylists.getCurrentUserPlaylists(accessToken, options);
+      const data = await playlistsAPI.getCurrentUserPlaylists(options);
       setCurrentUserPlaylists(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch current user playlists');
@@ -112,8 +106,7 @@ export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyPlaylists.getUserPlaylists(accessToken, userId, options);
+      const data = await playlistsAPI.getUserPlaylists(userId, options);
       setUserPlaylists(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch user playlists');
@@ -129,8 +122,7 @@ export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const result = await spotifyPlaylists.createPlaylist(accessToken, userId, data);
+      const result = await playlistsAPI.createPlaylist(userId, data);
       setCreatedPlaylist(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create playlist');
@@ -146,8 +138,7 @@ export const useSpotifyPlaylists = (): UseSpotifyPlaylistsReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const result = await spotifyPlaylists.addItemsToPlaylist(accessToken, playlistId, trackUris);
+      const result = await playlistsAPI.addItemsToPlaylist(playlistId, trackUris);
       setAddItemsResponse(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add items to playlist');

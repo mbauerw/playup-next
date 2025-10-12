@@ -1,9 +1,8 @@
+'use client'
+
 import { useState, useCallback } from 'react';
-import { spotifyApi } from '@/services/spotify';
-import { Device, PlaybackState, RecentlyPlayedTracks } from '@/types';
-import { useSpotifyContext } from '@/contexts/SpotifyContext';
-
-
+import { playerAPI } from '@/services/api/player';
+import { PlaybackState, RecentlyPlayedTracks } from '@/types';
 
 interface UseSpotifyPlayerReturn {
   // State
@@ -13,9 +12,13 @@ interface UseSpotifyPlayerReturn {
   error: string | null;
 
   // Actions
-  getCurrentPlayback: ( market?: string) => Promise<void>;
+  getCurrentPlayback: (market?: string) => Promise<void>;
   pausePlayback: (deviceId?: string) => Promise<void>;
-  fetchRecentlyPlayed: (options?: {limit?: number, after?: number, before?: number}) => Promise<void>;
+  fetchRecentlyPlayed: (options?: {
+    limit?: number;
+    after?: number;
+    before?: number;
+  }) => Promise<void>;
   resumePlayback: (
     deviceId?: string,
     contextUri?: string,
@@ -32,21 +35,17 @@ interface UseSpotifyPlayerReturn {
 }
 
 export const useSpotifyPlayer = (): UseSpotifyPlayerReturn => {
-  const { getAccessToken } = useSpotifyContext();
-
+  
   const [playbackState, setPlaybackState] = useState<PlaybackState | null>(null);
   const [recentTracks, setRecentTracks] = useState<RecentlyPlayedTracks | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getCurrentPlayback = useCallback(async (
-    market?: string
-  ) => {
+  const getCurrentPlayback = useCallback(async (market?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyApi.getCurrentPlayback(accessToken);
+      const data = await playerAPI.getCurrentPlayback(market);
       setPlaybackState(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to get current playback');
@@ -55,16 +54,12 @@ export const useSpotifyPlayer = (): UseSpotifyPlayerReturn => {
     }
   }, []);
 
-  const pausePlayback = useCallback(async (
-    deviceId?: string
-  ) => {
+  const pausePlayback = useCallback(async (deviceId?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      await spotifyApi.pausePlayback(accessToken);
-      // Refresh playback state after pausing
-      await getCurrentPlayback(accessToken);
+      await playerAPI.pausePlayback(deviceId);
+      await getCurrentPlayback();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to pause playback');
     } finally {
@@ -73,13 +68,12 @@ export const useSpotifyPlayer = (): UseSpotifyPlayerReturn => {
   }, [getCurrentPlayback]);
 
   const fetchRecentlyPlayed = useCallback(async (
-    options?: {limit?: number, after?: number, before?: number}
+    options?: { limit?: number; after?: number; before?: number }
   ) => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyApi.getRecentlyPlayed(accessToken, options);
+      const data = await playerAPI.getRecentlyPlayed(options);
       setRecentTracks(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to get recently played');
@@ -88,7 +82,6 @@ export const useSpotifyPlayer = (): UseSpotifyPlayerReturn => {
     }
   }, []);
 
-  // Note: The following functions assume you'll extend your spotifyApi to include these methods
   const resumePlayback = useCallback(async (
     deviceId?: string,
     contextUri?: string,
@@ -99,31 +92,14 @@ export const useSpotifyPlayer = (): UseSpotifyPlayerReturn => {
     setLoading(true);
     setError(null);
     try {
-      // This would need to be implemented in your spotifyApi
-      const endpoint = deviceId ? `/me/player/play?device_id=${deviceId}` : '/me/player/play';
-      const body: any = {};
-      
-      if (contextUri) body.context_uri = contextUri;
-      if (uris) body.uris = uris;
-      if (offset) body.offset = offset;
-      if (positionMs) body.position_ms = positionMs;
-
-      const accessToken = await getAccessToken();
-      const response = await fetch(`https://api.spotify.com/v1${endpoint}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
+      await playerAPI.resumePlayback({
+        deviceId,
+        contextUri,
+        uris,
+        offset,
+        positionMs,
       });
-
-      if (!response.ok) {
-        throw new Error(`Resume playback failed: ${response.status}`);
-      }
-
-      // Refresh playback state after resuming
-      await getCurrentPlayback(accessToken);
+      await getCurrentPlayback();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to resume playback');
     } finally {
@@ -131,27 +107,12 @@ export const useSpotifyPlayer = (): UseSpotifyPlayerReturn => {
     }
   }, [getCurrentPlayback]);
 
-  const skipToNext = useCallback(async (
-    deviceId?: string
-  ) => {
+  const skipToNext = useCallback(async (deviceId?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const endpoint = deviceId ? `/me/player/next?device_id=${deviceId}` : '/me/player/next';
-      const accessToken = await getAccessToken();
-      const response = await fetch(`https://api.spotify.com/v1${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Skip to next failed: ${response.status}`);
-      }
-
-      // Refresh playback state after skipping
-      await getCurrentPlayback(accessToken);
+      await playerAPI.skipToNext(deviceId);
+      await getCurrentPlayback();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to skip to next track');
     } finally {
@@ -159,27 +120,12 @@ export const useSpotifyPlayer = (): UseSpotifyPlayerReturn => {
     }
   }, [getCurrentPlayback]);
 
-  const skipToPrevious = useCallback(async (
-    deviceId?: string
-  ) => {
+  const skipToPrevious = useCallback(async (deviceId?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const endpoint = deviceId ? `/me/player/previous?device_id=${deviceId}` : '/me/player/previous';
-      const response = await fetch(`https://api.spotify.com/v1${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Skip to previous failed: ${response.status}`);
-      }
-
-      // Refresh playback state after skipping
-      await getCurrentPlayback(accessToken);
+      await playerAPI.skipToPrevious(deviceId);
+      await getCurrentPlayback();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to skip to previous track');
     } finally {
@@ -194,22 +140,8 @@ export const useSpotifyPlayer = (): UseSpotifyPlayerReturn => {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ volume_percent: volumePercent.toString() });
-      if (deviceId) params.append('device_id', deviceId);
-      const accessToken = await getAccessToken();
-      const response = await fetch(`https://api.spotify.com/v1/me/player/volume?${params}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Set volume failed: ${response.status}`);
-      }
-
-      // Refresh playback state after volume change
-      await getCurrentPlayback(accessToken);
+      await playerAPI.setVolume(volumePercent, deviceId);
+      await getCurrentPlayback();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to set volume');
     } finally {
@@ -224,23 +156,8 @@ export const useSpotifyPlayer = (): UseSpotifyPlayerReturn => {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ state: state.toString() });
-      if (deviceId) params.append('device_id', deviceId);
-
-      const accessToken = await getAccessToken();
-      const response = await fetch(`https://api.spotify.com/v1/me/player/shuffle?${params}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Toggle shuffle failed: ${response.status}`);
-      }
-
-      // Refresh playback state after shuffle change
-      await getCurrentPlayback(accessToken);
+      await playerAPI.toggleShuffle(state, deviceId);
+      await getCurrentPlayback();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle shuffle');
     } finally {
@@ -255,22 +172,8 @@ export const useSpotifyPlayer = (): UseSpotifyPlayerReturn => {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ state });
-      if (deviceId) params.append('device_id', deviceId);
-      const accessToken = await getAccessToken();
-      const response = await fetch(`https://api.spotify.com/v1/me/player/repeat?${params}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Set repeat mode failed: ${response.status}`);
-      }
-
-      // Refresh playback state after repeat change
-      await getCurrentPlayback(accessToken);
+      await playerAPI.setRepeatMode(state, deviceId);
+      await getCurrentPlayback();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to set repeat mode');
     } finally {

@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
-import { spotifyUsers } from '@/services/spotify/users';
-import type { CurrentUser, UserTopItems, FollowedArtists } from '@/types';
-import { useSpotifyContext } from '@/contexts/SpotifyContext';
+'use client'
 
+import { useState, useCallback } from 'react';
+import { usersAPI } from '@/services/api/users';
+import type { CurrentUser, UserTopItems, FollowedArtists } from '@/types';
 
 interface UseSpotifyUsersReturn {
   // State
@@ -13,7 +13,7 @@ interface UseSpotifyUsersReturn {
   error: string | null;
 
   // Actions
-  fetchCurrentUser: (accessToken: string) => Promise<void>;
+  fetchCurrentUser: () => Promise<void>;
   fetchTopItems: (
     type: 'artists' | 'tracks',
     options?: {
@@ -29,8 +29,7 @@ interface UseSpotifyUsersReturn {
 }
 
 export const useSpotifyUsers = (): UseSpotifyUsersReturn => {
-  const { getAccessToken } = useSpotifyContext();
-
+  
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [topItems, setTopItems] = useState<UserTopItems | null>(null);
   const [followedArtists, setFollowedArtists] = useState<FollowedArtists | null>(null);
@@ -41,8 +40,7 @@ export const useSpotifyUsers = (): UseSpotifyUsersReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyUsers.getCurrentUser(accessToken);
+      const data = await usersAPI.getCurrentUser();
       setCurrentUser(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch current user');
@@ -62,8 +60,7 @@ export const useSpotifyUsers = (): UseSpotifyUsersReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyUsers.getTopItems(accessToken, type, options);
+      const data = await usersAPI.getTopItems(type, options);
       setTopItems(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch top items');
@@ -78,8 +75,7 @@ export const useSpotifyUsers = (): UseSpotifyUsersReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyUsers.getFollowedArtists(accessToken, options);
+      const data = await usersAPI.getFollowedArtists(options);
       setFollowedArtists(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch followed artists');

@@ -1,14 +1,15 @@
+'use client'
+
 import { useState, useCallback } from 'react';
-import { spotifyTracks } from '@/services/spotify/tracks';
-import type { SavedTracks, SpotifyTrack, MultipleTracks, LimitOffsetParams } from '@/types';
-import { useSpotifyContext } from '@/contexts/SpotifyContext';
+import { tracksAPI } from '@/services/api/tracks';
+import type { SavedTracks, SpotifyTrack, MultipleTracks } from '@/types';
 
 interface UseSpotifyTracksReturn {
   // State
   savedTracks: SavedTracks | null;
   singleTrack: SpotifyTrack | null;
   multipleTracks: MultipleTracks | null;
-  savedTrackStatus: Boolean[] | null;
+  savedTrackStatus: boolean[] | null;
   loading: boolean;
   error: string | null;
 
@@ -21,12 +22,12 @@ interface UseSpotifyTracksReturn {
 }
 
 export const useSpotifyTracks = (): UseSpotifyTracksReturn => {
-  const { getAccessToken } = useSpotifyContext();
-
+  // No more getAccessToken!
+  
   const [savedTracks, setSavedTracks] = useState<SavedTracks | null>(null);
   const [singleTrack, setSingleTrack] = useState<SpotifyTrack | null>(null);
   const [multipleTracks, setMultipleTracks] = useState<MultipleTracks | null>(null);
-  const [savedTrackStatus, setSavedTrackStatus] = useState<Boolean[] | null>(null);
+  const [savedTrackStatus, setSavedTrackStatus] = useState<boolean[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,8 +38,7 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyTracks.getTrack(accessToken, trackId, market);
+      const data = await tracksAPI.getTrack(trackId, market);
       setSingleTrack(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch track');
@@ -49,16 +49,15 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturn => {
 
   const fetchSavedTracks = useCallback(async (
     options?: {
-      limit?: number,
-      offset?: number,
-      market?: string 
+      limit?: number;
+      offset?: number;
+      market?: string;
     }
   ) => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyTracks.getSavedTracks(accessToken, options);
+      const data = await tracksAPI.getSavedTracks(options);
       setSavedTracks(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch saved tracks');
@@ -74,8 +73,7 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyTracks.getSeveralTracks(accessToken, trackIds, market);
+      const data = await tracksAPI.getSeveralTracks(trackIds, market);
       setMultipleTracks(data);
       return data;
     } catch (err) {
@@ -93,8 +91,7 @@ export const useSpotifyTracks = (): UseSpotifyTracksReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyTracks.checkUsersSavedTracks(accessToken, trackIds, market);
+      const data = await tracksAPI.checkSavedStatus(trackIds, market);
       setSavedTrackStatus(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to check saved track status');

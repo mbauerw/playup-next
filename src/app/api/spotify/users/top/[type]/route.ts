@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { spotifyAlbums } from '@/services/spotify/albums';
+import { spotifyUsers } from '@/services/spotify/users';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }  // ← Promise type
+  { params }: { params: Promise<{ type: string }> }
 ) {
   const session = await getServerSession(authOptions);
   
@@ -14,28 +14,35 @@ export async function GET(
   }
 
   const { searchParams } = new URL(request.url);
-  const market = searchParams.get('market');
+  const time_range = searchParams.get('time_range');
   const limit = searchParams.get('limit');
   const offset = searchParams.get('offset');
 
-  const { id } = await params;  // ← Await params first
+  const { type } = await params;
+
+  if (type !== 'artists' && type !== 'tracks') {
+    return NextResponse.json(
+      { error: 'type must be artists or tracks' },
+      { status: 400 }
+    );
+  }
 
   try {
-    const tracks = await spotifyAlbums.getAlbumTracks(
+    const topItems = await spotifyUsers.getTopItems(
       session.spotifyAccessToken,
-      id,  // ← Now use the awaited id
+      type,
       {
-        market: market || undefined,
+        time_range: time_range as 'short_term' | 'medium_term' | 'long_term' | undefined,
         limit: limit ? Number(limit) : undefined,
         offset: offset ? Number(offset) : undefined,
       }
     );
 
-    return NextResponse.json(tracks);
+    return NextResponse.json(topItems);
   } catch (error) {
-    console.error('Failed to fetch album tracks:', error);
+    console.error('Failed to fetch top items:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch album tracks' },
+      { error: 'Failed to fetch top items' },
       { status: 500 }
     );
   }

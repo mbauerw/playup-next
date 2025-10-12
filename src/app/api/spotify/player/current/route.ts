@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { spotifyAlbums } from '@/services/spotify/albums';
+import { spotifyPlayer } from '@/services/spotify/player';
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }  // ← Promise type
-) {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   
   if (!session?.spotifyAccessToken) {
@@ -16,20 +13,17 @@ export async function GET(
   const { searchParams } = new URL(request.url);
   const market = searchParams.get('market');
 
-  const { id } = await params;  // ← Await params first
-
   try {
-    const album = await spotifyAlbums.getAlbum(
+    const playback = await spotifyPlayer.getCurrentPlayback(
       session.spotifyAccessToken,
-      id,  // ← Now use the awaited id
       market || undefined
     );
 
-    return NextResponse.json(album);
+    return NextResponse.json(playback);
   } catch (error) {
-    console.error('Failed to fetch album:', error);
+    console.error('Failed to get current playback:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch album' },
+      { error: 'Failed to get current playback' },
       { status: 500 }
     );
   }

@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { spotifyAlbums } from '@/services/spotify/albums';
+import { spotifyPlaylists } from '@/services/spotify/playlists';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }  // ← Promise type
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   const session = await getServerSession(authOptions);
   
@@ -14,28 +14,26 @@ export async function GET(
   }
 
   const { searchParams } = new URL(request.url);
-  const market = searchParams.get('market');
   const limit = searchParams.get('limit');
   const offset = searchParams.get('offset');
 
-  const { id } = await params;  // ← Await params first
+  const { userId } = await params;
 
   try {
-    const tracks = await spotifyAlbums.getAlbumTracks(
+    const playlists = await spotifyPlaylists.getUserPlaylists(
       session.spotifyAccessToken,
-      id,  // ← Now use the awaited id
+      userId,
       {
-        market: market || undefined,
         limit: limit ? Number(limit) : undefined,
         offset: offset ? Number(offset) : undefined,
       }
     );
 
-    return NextResponse.json(tracks);
+    return NextResponse.json(playlists);
   } catch (error) {
-    console.error('Failed to fetch album tracks:', error);
+    console.error('Failed to fetch user playlists:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch album tracks' },
+      { error: 'Failed to fetch user playlists' },
       { status: 500 }
     );
   }

@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
-import { spotifyApi } from '@/services/spotify';
-import { useSpotifyContext } from '@/contexts/SpotifyContext';
+'use client'
 
+import { useState, useCallback } from 'react';
+import { searchAPI } from '@/services/api/search';
+import { SpotifyAlbum, SpotifyArtist, SpotifyPlaylist, SpotifyTrack } from '@/types';
 
 // Define search result types
 interface SearchResults {
@@ -12,7 +13,7 @@ interface SearchResults {
     offset: number;
     previous: string | null;
     total: number;
-    items: any[]; // You can replace with SpotifyTrack[] if you have the type
+    items: SpotifyTrack[]; 
   };
   artists?: {
     href: string;
@@ -21,7 +22,7 @@ interface SearchResults {
     offset: number;
     previous: string | null;
     total: number;
-    items: any[]; // You can replace with SpotifyArtist[] if you have the type
+    items: SpotifyArtist[]; 
   };
   albums?: {
     href: string;
@@ -30,7 +31,7 @@ interface SearchResults {
     offset: number;
     previous: string | null;
     total: number;
-    items: any[]; // You can replace with SpotifyAlbum[] if you have the type
+    items: SpotifyAlbum[]; 
   };
   playlists?: {
     href: string;
@@ -39,7 +40,7 @@ interface SearchResults {
     offset: number;
     previous: string | null;
     total: number;
-    items: any[]; // You can replace with SpotifyPlaylist[] if you have the type
+    items: SpotifyPlaylist[];
   };
 }
 
@@ -59,8 +60,7 @@ interface UseSpotifySearchReturn {
 }
 
 export const useSpotifySearch = (): UseSpotifySearchReturn => {
-  const { getAccessToken } = useSpotifyContext();
-
+  
   const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,19 +83,7 @@ export const useSpotifySearch = (): UseSpotifySearchReturn => {
     setLoading(true);
     setError(null);
     try {
-      // Build search parameters
-      const searchParams = new URLSearchParams({
-        q: query,
-        type: type
-      });
-
-      if (options?.limit) searchParams.append('limit', options.limit.toString());
-      if (options?.offset) searchParams.append('offset', options.offset.toString());
-      if (options?.market) searchParams.append('market', options.market);
-      if (options?.include_external) searchParams.append('include_external', options.include_external);
-
-      const accessToken = await getAccessToken();
-      const data = await spotifyApi.search(accessToken, query, type);
+      const data = await searchAPI.search(query, type, options);
       setSearchResults(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to perform search');

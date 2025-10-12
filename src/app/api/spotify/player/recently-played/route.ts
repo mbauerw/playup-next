@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { spotifyAlbums } from '@/services/spotify/albums';
+import { spotifyPlayer } from '@/services/spotify/player';
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }  // ← Promise type
-) {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   
   if (!session?.spotifyAccessToken) {
@@ -14,28 +11,25 @@ export async function GET(
   }
 
   const { searchParams } = new URL(request.url);
-  const market = searchParams.get('market');
   const limit = searchParams.get('limit');
-  const offset = searchParams.get('offset');
-
-  const { id } = await params;  // ← Await params first
+  const after = searchParams.get('after');
+  const before = searchParams.get('before');
 
   try {
-    const tracks = await spotifyAlbums.getAlbumTracks(
+    const tracks = await spotifyPlayer.getRecentlyPlayed(
       session.spotifyAccessToken,
-      id,  // ← Now use the awaited id
       {
-        market: market || undefined,
         limit: limit ? Number(limit) : undefined,
-        offset: offset ? Number(offset) : undefined,
+        after: after ? Number(after) : undefined,
+        before: before ? Number(before) : undefined,
       }
     );
 
     return NextResponse.json(tracks);
   } catch (error) {
-    console.error('Failed to fetch album tracks:', error);
+    console.error('Failed to get recently played:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch album tracks' },
+      { error: 'Failed to get recently played' },
       { status: 500 }
     );
   }

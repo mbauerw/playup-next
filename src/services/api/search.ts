@@ -1,17 +1,14 @@
-// services/spotify/search.ts
-import { makeAuthenticatedRequest } from './index';
 import type { SearchResults } from '@/types';
 
-export const spotifySearch = {
+export const searchAPI = {
   async search(
-    accessToken: string,
     query: string,
     type: string,
     options?: {
       market?: string;
       limit?: number;
       offset?: number;
-      include_external?: 'audio';
+      include_external?: string;
     }
   ): Promise<SearchResults> {
     const params = new URLSearchParams();
@@ -23,9 +20,8 @@ export const spotifySearch = {
     if (options?.offset) params.append('offset', options.offset.toString());
     if (options?.include_external) params.append('include_external', options.include_external);
 
-    return makeAuthenticatedRequest<SearchResults>(
-      `/search?${params}`,
-      accessToken
-    );
+    const res = await fetch(`/api/spotify/search?${params}`);
+    if (!res.ok) throw new Error('Failed to perform search');
+    return res.json();
   },
 };

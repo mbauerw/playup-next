@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
-import { spotifyArtists } from '@/services/spotify/artists';
-import type { SpotifyArtist, ArtistAlbums, MultipleTracks } from '@/types';
-import { useSpotifyContext } from '@/contexts/SpotifyContext';
+'use client'
 
+import { useState, useCallback } from 'react';
+import { artistsAPI } from '@/services/api/artists';
+import type { SpotifyArtist, ArtistAlbums, MultipleTracks } from '@/types';
 
 interface UseSpotifyArtistsReturn {
   // State
@@ -33,8 +33,8 @@ interface UseSpotifyArtistsReturn {
 }
 
 export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
-  const { getAccessToken } = useSpotifyContext();
-
+  // No more getAccessToken!
+  
   const [artist, setArtist] = useState<SpotifyArtist | null>(null);
   const [artists, setArtists] = useState<SpotifyArtist[] | null>(null);
   const [artistAlbums, setArtistAlbums] = useState<ArtistAlbums | null>(null);
@@ -42,14 +42,11 @@ export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchArtist = useCallback(async (
-    artistId: string
-  ) => {
+  const fetchArtist = useCallback(async (artistId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyArtists.getArtist(accessToken, artistId);
+      const data = await artistsAPI.getArtist(artistId);
       setArtist(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch artist');
@@ -58,15 +55,11 @@ export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
     }
   }, []);
 
-  const fetchSeveralArtists = useCallback(async (
-    artistIds: string[]
-  ) => {
+  const fetchSeveralArtists = useCallback(async (artistIds: string[]) => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const idsString = artistIds.join(',');
-      const data = await spotifyArtists.getSeveralArtists(accessToken, idsString);
+      const data = await artistsAPI.getSeveralArtists(artistIds);
       setArtists(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch artists');
@@ -87,8 +80,7 @@ export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyArtists.getArtistAlbums(accessToken, artistId, options);
+      const data = await artistsAPI.getArtistAlbums(artistId, options);
       setArtistAlbums(data);
       console.log("fetchArtistAlbums: ", data);
     } catch (err) {
@@ -105,8 +97,7 @@ export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyArtists.getArtistTopTracks(accessToken, artistId, market);
+      const data = await artistsAPI.getArtistTopTracks(artistId, market);
       setArtistTopTracks(data);
       console.log("fetchArtistTopTracks: ", data);
     } catch (err) {

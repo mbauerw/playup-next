@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { spotifyAlbums } from '@/services/spotify/albums';
+import { spotifyTracks } from '@/services/spotify/tracks';
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }  // ← Promise type
-) {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   
   if (!session?.spotifyAccessToken) {
@@ -14,22 +11,25 @@ export async function GET(
   }
 
   const { searchParams } = new URL(request.url);
+  const ids = searchParams.get('ids');
   const market = searchParams.get('market');
 
-  const { id } = await params;  // ← Await params first
+  if (!ids) {
+    return NextResponse.json({ error: 'Track IDs required' }, { status: 400 });
+  }
 
   try {
-    const album = await spotifyAlbums.getAlbum(
+    const tracks = await spotifyTracks.getSeveralTracks(
       session.spotifyAccessToken,
-      id,  // ← Now use the awaited id
+      ids.split(','),
       market || undefined
     );
 
-    return NextResponse.json(album);
+    return NextResponse.json(tracks);
   } catch (error) {
-    console.error('Failed to fetch album:', error);
+    console.error('Failed to fetch tracks:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch album' },
+      { error: 'Failed to fetch tracks' },
       { status: 500 }
     );
   }

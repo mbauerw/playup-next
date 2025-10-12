@@ -1,4 +1,3 @@
-// hooks/useSpotifyAlbums.ts
 import { useState, useCallback } from 'react';
 import { albumsAPI } from '@/services/api/albums';
 
