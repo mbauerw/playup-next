@@ -1,9 +1,8 @@
-// src/app/api/spotify/token/route.ts
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { refreshSpotifyToken } from '@/lib/spotify';
-import { authOptions } from '@/lib/auth'; // Import your auth config
+import { authOptions } from '@/lib/auth'; 
 
 export async function GET() {
   try {
@@ -55,7 +54,6 @@ export async function GET() {
       );
     }
 
-    // Check if DB token is still valid
     if (user.spotifyAccessToken && 
         user.spotifyTokenExpiry && 
         user.spotifyTokenExpiry > bufferTime) {

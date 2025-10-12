@@ -65,9 +65,10 @@ export const useGetRecommendations = () => {
     }
   }, [getAccessToken]);
 
-  const loadInputTracks = useCallback((tracks: MultipleTracks) => {
+  const loadInputTracks = useCallback((tracks: MultipleTracks): MultipleTracks => {
     setSourceTracks(tracks);
     console.log("sourced tracks");
+    return tracks;
   }, []);
 
   const fetchSourceTracks = useCallback(async (
@@ -78,7 +79,7 @@ export const useGetRecommendations = () => {
       return;
     }
 
-    const albums = getMultipleTrackAlbums(tracks); 
+    const albums = getMultipleTrackAlbums(tracks);
     const combinedTracks: MultipleTracks = { tracks: [] };
 
     setLoading(true);
@@ -93,26 +94,38 @@ export const useGetRecommendations = () => {
         const albumTrackIds = getAlbumTrackIds(albumTracks);
         const fetchedTracks = await fetchSeveralTracks(albumTrackIds);
         if (!fetchedTracks) continue;
-        
+
         const sortedTracks = rankSongPopularity(fetchedTracks);
-        console.log("\n Sorted Tracks #1:" + JSON.stringify("name: " + sortedTracks.tracks[0].name + " pop: " + sortedTracks.tracks[0].popularity));
-        console.log("\n Sorted Tracks #2:" + JSON.stringify("name: " + sortedTracks.tracks[1].name + " pop: " + sortedTracks.tracks[1].popularity));
-        console.log("\n Sorted Tracks #3:" + JSON.stringify("name: " + sortedTracks.tracks[2].name + " pop: " + sortedTracks.tracks[2].popularity));
 
-        // Adjust weights to size of tracks
-        let weights = [3, 3, 3, 3, 2, 2, 2, 2, 1, 1]
+        // random track selection
+        let weights = [3, 3, 3, 3, 2, 2, 2, 2, 1, 1];
 
-        if (sortedTracks.tracks.length > weights.length){
+        if (sortedTracks.tracks.length > weights.length) {
           weights = [...weights, ...Array(sortedTracks.tracks.length - weights.length).fill(1)];
         } else {
           weights = weights.slice(0, sortedTracks.tracks.length);
         }
 
-        const selectedTrack = weightedRandom(sortedTracks.tracks, weights) as SpotifyTrack;
+        let availableTracks = [...sortedTracks.tracks];
+        let availableWeights = [...weights];
 
-        console.log("The selected Track is : \n" + JSON.stringify(selectedTrack.name + "\n artist: " + selectedTrack.artists[0] + "\n pop:" + selectedTrack.popularity));
+        let numberOfTracksToSelect = 3;
 
-        combinedTracks.tracks.push(selectedTrack);
+        if (numberOfTracksToSelect > availableTracks.length){
+          numberOfTracksToSelect = availableTracks.length;
+        }
+
+        for (let i = 0; i < numberOfTracksToSelect && availableTracks.length > 0; i++) {
+          const selectedTrack = weightedRandom(availableTracks, availableWeights) as SpotifyTrack;
+
+          console.log(`selected track ${i + 1}: ${selectedTrack.name}\n  artist: ${selectedTrack.artists[0].name}\n  pop: ${selectedTrack.popularity}`);
+
+          combinedTracks.tracks.push(selectedTrack);
+
+          const selectedIndex = availableTracks.indexOf(selectedTrack);
+          availableTracks.splice(selectedIndex, 1);
+          availableWeights.splice(selectedIndex, 1);
+        }
 
       } catch (err) {
         console.error(err as Error);
@@ -123,23 +136,32 @@ export const useGetRecommendations = () => {
     setLoading(false);
     setSourceAlbumTracks(combinedTracks);
     return combinedTracks;
-  }, [fetchAlbumTracks, fetchSeveralTracks]); 
+  }, [fetchAlbumTracks, fetchSeveralTracks]);
 
-  const weightedRandom = (items: any, weights: number[])=>{
+  const weightedRandom = (items: any, weights: number[]) => {
     let totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-    
+
     let random = Math.random() * totalWeight;
-    
+
     for (let i = 0; i < items.length; i++) {
-        if (random < weights[i]) {
-            return items[i];
-        }
-        random -= weights[i];
+      if (random < weights[i]) {
+        return items[i];
+      }
+      random -= weights[i];
     }
 
   }
-  const getRecommendations = useCallback(async (playlist: SpotifyPlaylist) => {
-    const tracks = await loadPlaylistTracks(playlist);
+  const getRecommendations = useCallback(async (playlist?: SpotifyPlaylist, inputTracks?: MultipleTracks ) => {
+    
+    let tracks: MultipleTracks | null = null; 
+
+    if (playlist){
+      tracks = await loadPlaylistTracks(playlist);
+    }
+    else if (inputTracks) {
+      tracks = loadInputTracks(inputTracks);
+    }
+      
     if (!tracks) return;
 
     const recommendations = await fetchSourceTracks(tracks);

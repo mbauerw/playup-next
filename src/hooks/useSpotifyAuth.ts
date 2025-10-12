@@ -15,12 +15,11 @@ export const useSpotifyAuth = () => {
       throw new Error('User not authenticated');
     }
 
-    // Check if we have a valid token in the session
     if (session.spotifyAccessToken && session.spotifyTokenExpires) {
       const now = Date.now() / 1000;
       const expiresAt = session.spotifyTokenExpires;
       
-      // If token expires in more than 5 minutes, use it
+      console.log(" Ain't no need to hit the DB. You can just get the token from MEEEE");
       if (expiresAt > now + 300) {
         return session.spotifyAccessToken;
       }

@@ -1,6 +1,6 @@
+// hooks/useSpotifyAlbums.ts
 import { useState, useCallback } from 'react';
-import { spotifyAlbums } from '@/services/spotify/albums';
-import { useSpotifyContext } from '@/contexts/SpotifyContext';
+import { albumsAPI } from '@/services/api/albums';
 
 import type { 
   SpotifyAlbum, 
@@ -19,7 +19,7 @@ interface UseSpotifyAlbumsReturn {
   error: string | null;
 
   // Actions
-  fetchAlbum: ( albumId: string, market?: string) => Promise<void>;
+  fetchAlbum: (albumId: string, market?: string) => Promise<void>;
   fetchAlbums: (albumIds: string[], market?: string) => Promise<void>;
   fetchAlbumTracks: (
     albumId: string,
@@ -40,8 +40,8 @@ interface UseSpotifyAlbumsReturn {
 }
 
 export const useSpotifyAlbums = (): UseSpotifyAlbumsReturn => {
-  const { getAccessToken } = useSpotifyContext();
-
+  // No more getAccessToken - removed SpotifyContext dependency!
+  
   const [album, setAlbum] = useState<SpotifyAlbum | null>(null);
   const [albums, setAlbums] = useState<MultipleAlbums | null>(null);
   const [albumTracks, setAlbumTracks] = useState<AlbumTracks | null>(null);
@@ -56,8 +56,7 @@ export const useSpotifyAlbums = (): UseSpotifyAlbumsReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyAlbums.getAlbum(accessToken, albumId, market);
+      const data = await albumsAPI.getAlbum(albumId, market);
       setAlbum(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch album');
@@ -73,8 +72,7 @@ export const useSpotifyAlbums = (): UseSpotifyAlbumsReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyAlbums.getAlbums(accessToken, albumIds, market);
+      const data = await albumsAPI.getAlbums(albumIds, market);
       setAlbums(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch albums');
@@ -94,8 +92,7 @@ export const useSpotifyAlbums = (): UseSpotifyAlbumsReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyAlbums.getAlbumTracks(accessToken, albumId, options);
+      const data = await albumsAPI.getAlbumTracks(albumId, options);
       setAlbumTracks(data);
       return data;
     } catch (err) {
@@ -116,8 +113,7 @@ export const useSpotifyAlbums = (): UseSpotifyAlbumsReturn => {
     setLoading(true);
     setError(null);
     try {
-      const accessToken = await getAccessToken();
-      const data = await spotifyAlbums.getSavedAlbums(accessToken, options);
+      const data = await albumsAPI.getSavedAlbums(options);
       setSavedAlbums(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch saved albums');
