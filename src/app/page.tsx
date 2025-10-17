@@ -4,6 +4,8 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import SpotifyDropZone from '@/components/SpotifyDropZone';
+import SpotifyPlayer from '@/components/SpotifyPlayer';
 
 import Logo from '@/components/Logo';
 
@@ -11,6 +13,9 @@ export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [showContent, setShowContent] = useState(false);
+
+  // spotify widget player params
+  const [playerLink, setPlayerLink] = useState("5ihDGnhQgMA0F0tk9fNLlA")
 
 
   useEffect(() => {
@@ -23,11 +28,15 @@ export default function HomePage() {
     }
   }, [status]);
 
+  const handleChangeTrack = (track: string) => {
+    const cleanTrack = track.split('?')[0].trim();
+    setPlayerLink(cleanTrack);
+  }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-neutral-900">
       {/* nav */}
-      <nav className="bg-gray-900/50 backdrop-blur-md border-b border-gray-800 fixed w-full z-50">
+      <nav className="bg-black/40 backdrop-blur-md border-b border-gray-800 fixed w-full z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-2">
             <div className="flex items-center">
@@ -78,13 +87,15 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <SpotifyPlayer trackId={playerLink}/> 
             {session ? (
-              <Link
-                href="/dashboard"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg"
-              >
-                Make Me a Playlist
-              </Link>
+              // <Link
+              //   href="/dashboard"
+              //   className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg"
+              // >
+              //   Make Me a Playlist
+              // </Link>
+              <div></div>
             ) : (
               <>
                 <Link
@@ -101,6 +112,10 @@ export default function HomePage() {
                 </Link>
               </>
             )}
+          </div>
+          <div className='py-10 flex flex-col justify-center items-center'>
+            <SpotifyDropZone handleChangeTrack={handleChangeTrack}></SpotifyDropZone>
+
           </div>
         </div>
 

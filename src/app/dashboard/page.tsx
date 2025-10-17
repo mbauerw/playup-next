@@ -12,7 +12,7 @@ import {
   spotifyTracks,
   spotifyUsers,  
   spotifyArtists
-} from '@/services/spotify';
+} from '@/services/spotify-api';
 import type { CurrentUser, CurrentUserPlaylists, SpotifyArtist } from '@/types';
 import SpotifyControlPanel from '@/components/ControlPanel';
 import BasicMenuExample from '@/components/BasicMenuExample';

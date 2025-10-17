@@ -2,7 +2,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { act } from 'react';
 import { useSpotifyArtists } from '../../hooks/useSpotifyArtists';
-import { spotifyArtists } from '@/services/spotify/artists';
+import { spotifyArtists } from '@/services/spotify-api/artists';
 import { createMockSpotifyArtist } from '@/lib/test-utils/fixtures';
 
 // Mock the Spotify service

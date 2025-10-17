@@ -878,10 +878,7 @@ const ApiPanel = ({
         {currentUserPlaylists && (
           <CurrentUserPlaylistsTable
             currentUserPlaylists={currentUserPlaylists}
-            token={token}
             handleChangeTrack={handleChangeTrack}
-            getPlaylistTracks={getPlaylistTracks}
-            getPlaylistArtists={getPlaylistArtists}
             handleFetchArtistTopTracks={handleFetchArtistTopTracks} />
         )}
 

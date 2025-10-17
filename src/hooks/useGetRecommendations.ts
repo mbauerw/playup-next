@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { spotifyArtists } from '@/services/spotify/artists';
-import type { SpotifyArtist, ArtistAlbums, MultipleTracks, SpotifyPlaylist, MultipleAlbums, AlbumTracks, SpotifyTrack } from '@/types';
+import { spotifyArtists } from '@/services/spotify-api/artists';
+import type { SpotifyArtist, ArtistAlbums, MultipleTracks, SpotifyPlaylist, MultipleAlbums, AlbumTracks, SpotifyTrack, MultipleTopArtists } from '@/types';
 import { useSpotifyContext } from '@/contexts/SpotifyContext';
 import { useSpotifyTracks } from './useSpotifyTracks';
 import { useSpotifyAlbums } from './useSpotifyAlbums';
@@ -8,6 +8,7 @@ import { getPlaylistTracks, getPlaylistArtists, getPlaylistTopArtists, rankPlayl
 import { getMultipleTrackAlbums, rankSongPopularity } from '@/lib/parsers/parseSpotifyTracks';
 import { getAlbumTrackIds } from '@/lib/parsers/parseAlbumTracks';
 import { saveArtistsFromTracks } from '@/lib/db/artists';
+import { getMultipleArtistsTopTracks, getMultipleArtistsRandomTopTrack } from '@/lib/parsers/parseArtists';
 
 
 
@@ -85,22 +86,40 @@ export const useGetRecommendations = () => {
 
     /* Here's where you add artist values to artist preferences */ 
 
-    // let topArtists = [];
-    // let botArtists = []; 
+ 
+    const minSet = 2;
 
-    // for (const [key, value] of artists.counts) {
-    //   if (value > 3){
-    //     topArtists.push(key);
-    //   }
-    //   else {
-    //     botArtists.push(key);
-    //   }
-    // }
+    let topTracks: MultipleTracks = {tracks: [] };
+    let botArtists: MultipleTopArtists = {artists: [] };
 
+    for (const track of tracks.tracks){
+      const artistId = track.artists[0].id;
+
+      if (!artists || !artists.counts) continue;
+
+      const artistCount = artists.counts.get(artistId);
+
+      if (artistCount == undefined) continue;
+
+      if(artistCount > minSet){
+        console.log("THERE ONCE |WAS ONE BUT NOW THERE IS THREEEE" + JSON.stringify(track));
+        topTracks.tracks.push(track);
+
+      }
+      else {
+        console.log("I'm sorry. You simply haven't reached the popularity threshhold. Another cycle then...")
+        botArtists.artists.push(track.artists[0]);
+      }
+    }
     /* Now, if the tracks.track.artist.id is in topArtists, source from albums. If not, source from top tracks" */
 
-    const albums = getMultipleTrackAlbums(tracks);
-    const combinedTracks: MultipleTracks = { tracks: [] };
+    // Next get random top tracks from botTracks
+    const albums = getMultipleTrackAlbums(topTracks);
+    const botArtistTopTracks: MultipleTracks = await getMultipleArtistsRandomTopTrack(botArtists);
+    
+    let numberOfTracksToSelect = 2;
+    const combinedTopTracks: MultipleTracks = { tracks: [] };
+    
 
     setLoading(true);
 
@@ -129,18 +148,19 @@ export const useGetRecommendations = () => {
         let availableTracks = [...sortedTracks.tracks];
         let availableWeights = [...weights];
 
-        let numberOfTracksToSelect = 3;
+        
 
         if (numberOfTracksToSelect > availableTracks.length){
           numberOfTracksToSelect = availableTracks.length;
         }
 
+        
         for (let i = 0; i < numberOfTracksToSelect && availableTracks.length > 0; i++) {
           const selectedTrack = weightedRandom(availableTracks, availableWeights) as SpotifyTrack;
 
           console.log(`selected track ${i + 1}: ${selectedTrack.name}\n  artist: ${selectedTrack.artists[0].name}\n  pop: ${selectedTrack.popularity}`);
 
-          combinedTracks.tracks.push(selectedTrack);
+          combinedTopTracks.tracks.push(selectedTrack);
 
           const selectedIndex = availableTracks.indexOf(selectedTrack);
           availableTracks.splice(selectedIndex, 1);
@@ -152,6 +172,8 @@ export const useGetRecommendations = () => {
         setError(err as Error);
       }
     }
+    const combinedTracks: MultipleTracks = { tracks: shuffleArray([...combinedTopTracks.tracks, ...botArtistTopTracks.tracks])};
+
     setError(null);
     setLoading(false);
     setSourceAlbumTracks(combinedTracks);
@@ -169,8 +191,16 @@ export const useGetRecommendations = () => {
       }
       random -= weights[i];
     }
-
   }
+  const shuffleArray = (array: any) => {
+    const shuffled = [...array]; // Create a copy to avoid mutating original
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Swap
+    }
+    return shuffled;
+  }
+  
   const getRecommendations = useCallback(async (playlist?: SpotifyPlaylist, inputTracks?: MultipleTracks ) => {
     
     let tracks: MultipleTracks | null = null; 

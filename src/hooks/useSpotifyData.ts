@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { spotifyApi, spotifyUsers, spotifyPlaylists, spotifyArtists, spotifyTracks } from '@/services/spotify';
+import { spotifyApi, spotifyUsers, spotifyPlaylists, spotifyArtists, spotifyTracks } from '@/services/spotify-api';
 import type { CurrentUser, CurrentUserPlaylists, SpotifyArtist } from '@/types';
 import { useSpotifyContext } from '@/contexts/SpotifyContext';
 

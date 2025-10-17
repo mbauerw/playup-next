@@ -90,7 +90,7 @@ const MultipleTracksTable: React.FC<MultipleTracksTableProps> = ({ tracks, handl
             {currentTracks.map((track, index) => {
               const actualRank = startIndex + index + 1;
               return (
-                <tr key={track!.id || index} className="hover:bg-gray-700">
+                <tr key={`${track!.id}-${actualRank}`} className="hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-bold text-gray-100">#{actualRank}</div>
                   </td>

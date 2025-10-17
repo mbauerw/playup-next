@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { spotifyPlayer } from '@/services/spotify/player';
+import { spotifyPlayer } from '@/services/spotify-api/player';
 
 export async function PUT(request: Request) {
   const session = await getServerSession(authOptions);

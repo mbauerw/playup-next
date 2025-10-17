@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { spotifyUsers } from '@/services/spotify/users';
+import { spotifyUsers } from '@/services/spotify-api/users';
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);

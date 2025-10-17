@@ -1,30 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { CurrentUserPlaylists, SpotifyPlaylist, MultipleTracks, PlaylistArtists, PlaylistTopArtists } from '@/types';
 import MultipleTracksTable from './MultipleTracksTable';
-import { getPlaylistTopArtists } from '@/lib/parsers/parseSpotifyPlaylist';
 import PlaylistTopArtistsTable from './PlaylistTopArtistsTable';
 import { useGetRecommendations } from '@/hooks/useGetRecommendations';
+import { getPlaylistArtists, getPlaylistTopArtists, getPlaylistTracks, rankPlaylistTracks } from '@/lib/parsers/parseSpotifyPlaylist';
+
 
 interface CurrentUserPlaylistsTableProps {
   currentUserPlaylists: CurrentUserPlaylists;
-  token: string | null;
   handleChangeTrack: (trackId: string) => void;
-  getPlaylistTracks?: (
-    playlist: SpotifyPlaylist | string,
-    options?: { 
-      market?: string,
-      fields?: string,
-      limit?: number,
-      offset?: number,
-      additional_types?: string }
-    ) => Promise<MultipleTracks>;
-  getPlaylistArtists?: (tracks: MultipleTracks) => PlaylistArtists;
-  getPlaylistTopArtists?: (playlistArtists: PlaylistArtists, limit: number) => PlaylistTopArtists;
   handleFetchArtistTopTracks?: (artistId: string, market?: string) => Promise<MultipleTracks | null>;
-  rankPlaylistTracks?: (playlist: SpotifyPlaylist | string, token: string, options?: { limit?: number, offset?: number }) => Promise<MultipleTracks>;
 }
 
-const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ currentUserPlaylists, token, handleChangeTrack, getPlaylistTracks, getPlaylistArtists, rankPlaylistTracks }) => {
+const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ currentUserPlaylists, handleChangeTrack }) => {
 
   const [playlistTracks, setPlaylistTracks] = useState<MultipleTracks>();
   const [playlistArtists, setPlaylistArtists] = useState<PlaylistArtists>();
@@ -41,8 +29,8 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
     loading
   } = useGetRecommendations();
  
-  const handleGetPlaylistTracks = async (playlist: SpotifyPlaylist, token: string | null) => {
-    if (getPlaylistTracks && token) {
+  const handleGetPlaylistTracks = async (playlist: SpotifyPlaylist) => {
+    if (getPlaylistTracks) {
       try {
         const options = {market: 'US'}
         const tracks = await getPlaylistTracks(playlist, options );
@@ -155,7 +143,7 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div>
-                      <button className='bg-blue-600 hover:bg-blue-800 border-1 border-black px-2 py-1 rounded text-white' onClick={() => handleGetPlaylistTracks(playlist, token)}> Get Playlist Tracks</button>
+                      <button className='bg-blue-600 hover:bg-blue-800 border-1 border-black px-2 py-1 rounded text-white' onClick={() => handleGetPlaylistTracks(playlist)}> Get Playlist Tracks</button>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

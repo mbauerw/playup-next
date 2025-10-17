@@ -1,5 +1,5 @@
 import { getPlaylistTracks, getPlaylistArtists, rankPlaylistTracks } from '../parsers/parseSpotifyPlaylist'
-import { spotifyPlaylists } from '@/services/spotify';
+import { spotifyPlaylists } from '@/services/spotify-api';
 import { rankSongPopularity } from '../parsers/parseAlbumTracks';
 import { MultipleTracks, SpotifyPlaylist } from '@/types';
 import { createMockSpotifyArtist } from '@/lib/test-utils/fixtures';

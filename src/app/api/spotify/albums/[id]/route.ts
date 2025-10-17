@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { spotifyAlbums } from '@/services/spotify/albums';
+import { spotifyAlbums } from '@/services/spotify-api/albums';
 
 export async function GET(
   request: Request,

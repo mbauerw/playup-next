@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { spotifyArtists } from '@/services/spotify/artists';
+import { spotifyArtists } from '@/services/spotify-api/artists';
 import type { SpotifyArtist, ArtistAlbums, MultipleTracks } from '@/types';
 import { useSpotifyContext } from '@/contexts/SpotifyContext';
 
