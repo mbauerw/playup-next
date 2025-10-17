@@ -7,12 +7,12 @@ import { useSpotifyAlbums } from './useSpotifyAlbums';
 import { getPlaylistTracks, getPlaylistArtists, getPlaylistTopArtists, rankPlaylistTracks } from '@/lib/parsers/parseSpotifyPlaylist';
 import { getMultipleTrackAlbums, rankSongPopularity } from '@/lib/parsers/parseSpotifyTracks';
 import { getAlbumTrackIds } from '@/lib/parsers/parseAlbumTracks';
+import { saveArtistsFromTracks } from '@/lib/db/artists';
 
 
 
 export const useGetRecommendations = () => {
-  const { getAccessToken } = useSpotifyContext();
-
+  
   // tracks hooks
   const {
     savedTracks,
@@ -51,8 +51,7 @@ export const useGetRecommendations = () => {
     try {
       setLoading(true);
       setError(null);
-      const token = await getAccessToken();
-      const playTracks = await getPlaylistTracks(playlist, token);
+      const playTracks = await getPlaylistTracks(playlist);
       setSourceTracks(playTracks);
       console.log("sourced playlist");
       return playTracks;
@@ -63,7 +62,7 @@ export const useGetRecommendations = () => {
     } finally {
       setLoading(false);
     }
-  }, [getAccessToken]);
+  }, [getPlaylistTracks]);
 
   const loadInputTracks = useCallback((tracks: MultipleTracks): MultipleTracks => {
     setSourceTracks(tracks);
@@ -78,6 +77,27 @@ export const useGetRecommendations = () => {
       console.log("No source tracks available");
       return;
     }
+
+
+     /* The problem is that one playlist could have 1000 tracks all from different albums. Need to sort
+     top artists first. If artist instances over 3, source from albums. if not, source from top tracks */
+    const artists = getPlaylistArtists(tracks);
+
+    /* Here's where you add artist values to artist preferences */ 
+
+    // let topArtists = [];
+    // let botArtists = []; 
+
+    // for (const [key, value] of artists.counts) {
+    //   if (value > 3){
+    //     topArtists.push(key);
+    //   }
+    //   else {
+    //     botArtists.push(key);
+    //   }
+    // }
+
+    /* Now, if the tracks.track.artist.id is in topArtists, source from albums. If not, source from top tracks" */
 
     const albums = getMultipleTrackAlbums(tracks);
     const combinedTracks: MultipleTracks = { tracks: [] };
@@ -165,6 +185,12 @@ export const useGetRecommendations = () => {
     if (!tracks) return;
 
     const recommendations = await fetchSourceTracks(tracks);
+    
+    if (!recommendations) return;
+    // add recommendations to database without delaying execution of "return recommendations;"
+    saveArtistsFromTracks(recommendations).catch(error => {
+      console.error('Failed to save artists:', error);
+    });
     return recommendations;
   }, [loadPlaylistTracks, fetchSourceTracks]);
 

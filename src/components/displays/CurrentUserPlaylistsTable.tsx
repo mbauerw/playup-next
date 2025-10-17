@@ -10,8 +10,7 @@ interface CurrentUserPlaylistsTableProps {
   token: string | null;
   handleChangeTrack: (trackId: string) => void;
   getPlaylistTracks?: (
-    playlist: SpotifyPlaylist | string, 
-    token: string, 
+    playlist: SpotifyPlaylist | string,
     options?: { 
       market?: string,
       fields?: string,
@@ -46,7 +45,7 @@ const CurrentUserPlaylistsTable: React.FC<CurrentUserPlaylistsTableProps> = ({ c
     if (getPlaylistTracks && token) {
       try {
         const options = {market: 'US'}
-        const tracks = await getPlaylistTracks(playlist, token, options );
+        const tracks = await getPlaylistTracks(playlist, options );
         setPlaylistTracks(tracks);
         console.log(tracks);
         handleGetPlaylistArtists(tracks);

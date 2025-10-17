@@ -33,7 +33,6 @@ interface UseSpotifyArtistsReturn {
 }
 
 export const useSpotifyArtists = (): UseSpotifyArtistsReturn => {
-  // No more getAccessToken!
   
   const [artist, setArtist] = useState<SpotifyArtist | null>(null);
   const [artists, setArtists] = useState<SpotifyArtist[] | null>(null);

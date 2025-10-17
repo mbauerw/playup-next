@@ -30,7 +30,6 @@ export async function POST() {
     const createdUsers = []
 
     for (const userData of testUsers) {
-      // Check if user already exists
       const existingUser = await prisma.user.findUnique({
         where: { email: userData.email }
       })

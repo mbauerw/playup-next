@@ -1,11 +1,10 @@
 import { SpotifyPlaylist, SpotifyArtist, SpotifyAlbum, SpotifyTrack, MultipleTracks, PlaylistItems, PlaylistTrack, PlaylistArtists, PlaylistTopArtists, MultipleAlbums } from "@/types";
-import { spotifyPlaylists } from "@/services/spotify";
+import { playlistsAPI } from "@/services/api/playlists";
 import { rankSongPopularity } from "./parseAlbumTracks";
 
 
 export const getPlaylistTracks = async (
   playlist: SpotifyPlaylist | string,
-  token: string,
   options?: { 
     market?: string,
     fields?: string,
@@ -14,7 +13,7 @@ export const getPlaylistTracks = async (
     additional_types?: string }
 ): Promise<MultipleTracks> => {
   const playlistId = typeof playlist === 'string' ? playlist : playlist.id;
-  const items = await spotifyPlaylists.getPlaylistItems(token, playlistId, options);
+  const items = await playlistsAPI.getPlaylistItems(playlistId, options);
 
   // console.log("Items from getPlaylistTracks:" + JSON.stringify(items));
 
@@ -54,8 +53,6 @@ export const getPlaylistTopArtists = (
     .slice(0, limit);
 
   const topCounts = new Map(sortedEntries);
-
-  // console.log("Here are the artists: ", JSON.stringify(playlistArtists));
   
   const topArtists = sortedEntries
     .map(([artistId]) => {
@@ -66,8 +63,6 @@ export const getPlaylistTopArtists = (
     })
     .filter((artist): artist is SpotifyArtist => artist !== undefined);
 
-
-  // console.log("\n Here are the TOP artists: ", JSON.stringify(playlistArtists));  
   return {
     artists: topArtists,
     counts: topCounts
@@ -76,7 +71,6 @@ export const getPlaylistTopArtists = (
 
 export const getPlaylistAlbums = async (
   playlist: SpotifyPlaylist | string,
-  token: string,
   options?: { 
     market?: string,
     fields?: string,
@@ -85,7 +79,7 @@ export const getPlaylistAlbums = async (
     additional_types?: string }
 ): Promise<MultipleAlbums> => {
   
-  const tracks = await getPlaylistTracks(playlist, token, options);
+  const tracks = await getPlaylistTracks(playlist, options);
   const albums = tracks.tracks
     .filter(track => track !== null)
     .map(track => track.album)
@@ -94,8 +88,8 @@ export const getPlaylistAlbums = async (
 }
 
 
-export const rankPlaylistTracks = async (playlist: SpotifyPlaylist, token: string, options?: { limit?: number, offset?: number }): Promise<MultipleTracks> => {
-  const tracks = await getPlaylistTracks(playlist, token, options);
+export const rankPlaylistTracks = async (playlist: SpotifyPlaylist, options?: { limit?: number, offset?: number }): Promise<MultipleTracks> => {
+  const tracks = await getPlaylistTracks(playlist, options);
   console.log("Here are the tracks: ", JSON.stringify(tracks));
   const rankedTracks = rankSongPopularity(tracks);
   return rankedTracks;

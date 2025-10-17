@@ -1,4 +1,3 @@
-// src/lib/spotify.ts
 import { prisma } from '@/lib/prisma'
 
 export async function refreshSpotifyToken(userId: string) {

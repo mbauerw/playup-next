@@ -1,14 +1,14 @@
 import { SpotifyCursors, SpotifyExternalUrls, SpotifyImage, Followers } from './common';
 
 export interface SpotifyArtist {
-  external_urls: SpotifyExternalUrls;
-  followers: Followers;
-  genres: string[];
-  href: string;
   id: string;
-  images: SpotifyImage[];
   name: string;
   popularity: number;
+  genres: string[];
+  images: SpotifyImage[];
+  followers: Followers;
+  href: string;
+  external_urls: SpotifyExternalUrls;
   type: string;
   uri: string;
 }
