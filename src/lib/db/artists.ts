@@ -40,7 +40,7 @@ export async function saveArtistsFromTracks(tracks: MultipleTracks) {
       throw new Error('No artists found to save');
     }
 
-    const response = await fetch('/api/artists', {
+    const response = await fetch('/api/db/artists', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

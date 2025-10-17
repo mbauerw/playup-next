@@ -14,13 +14,16 @@ export const spotifyArtists = {
 
   async getSeveralArtists(
     accessToken: string, 
-    artistIds: string[]  // Changed to array
+    artistIds: string[]
   ): Promise<SpotifyArtist[]> {
     const ids = Array.isArray(artistIds) ? artistIds.join(',') : artistIds;
-    return makeAuthenticatedRequest<SpotifyArtist[]>(
+    
+    const response = await makeAuthenticatedRequest<{ artists: SpotifyArtist[] }>(
       `/artists?ids=${ids}`,
       accessToken
     );
+    
+    return response.artists;
   },
 
   // Get Artist's Albums
