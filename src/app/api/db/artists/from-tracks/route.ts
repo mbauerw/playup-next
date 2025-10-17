@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     for (const track of tracks) {
       if (!track?.artists?.[0]) continue;
 
-      console.log("The Source artist is:" + JSON.stringify(track.artists[0]));
+      console.log("The Source artist from 'from-tracks API' is:" + JSON.stringify(track.artists[0]));
       const artist = track.artists[0];
       if (!uniqueArtists.has(artist.id)) {
         uniqueArtists.set(artist.id, {

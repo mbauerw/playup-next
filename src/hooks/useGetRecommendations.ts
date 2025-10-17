@@ -185,8 +185,12 @@ export const useGetRecommendations = () => {
     if (!tracks) return;
 
     const recommendations = await fetchSourceTracks(tracks);
-    
+
     if (!recommendations) return;
+
+    console.log("\nThe Source artist from 'RECOMMENDATIONS' is:" + JSON.stringify(recommendations.tracks[0].artists[0]));
+
+
     // add recommendations to database without delaying execution of "return recommendations;"
     saveArtistsFromTracks(recommendations).catch(error => {
       console.error('Failed to save artists:', error);

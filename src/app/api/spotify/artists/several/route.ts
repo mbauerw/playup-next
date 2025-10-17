@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { spotifyArtists } from '@/services/spotify/artists';
+import { spotifyArtists } from '@/services/spotify';
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -18,9 +18,11 @@ export async function GET(request: Request) {
   }
 
   try {
+    const artistIds = ids.split(',');
+    
     const artists = await spotifyArtists.getSeveralArtists(
       session.spotifyAccessToken,
-      ids
+      artistIds 
     );
 
     return NextResponse.json(artists);

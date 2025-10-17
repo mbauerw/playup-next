@@ -13,6 +13,8 @@ export const artistsAPI = {
   },
 
   async getSeveralArtists(artistIds: string[]): Promise<SpotifyArtist[]> {
+
+    console.log("ARTIST IDS FROM getSeveralArtists" + artistIds);
     const params = new URLSearchParams();
     params.append('ids', artistIds.join(','));
     

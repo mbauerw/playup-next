@@ -12,8 +12,15 @@ export const spotifyArtists = {
     return makeAuthenticatedRequest<SpotifyArtist>(`/artists/${artistId}`, accessToken);
   },
 
-  async getSeveralArtists(accessToken: string, artistIds: string): Promise<SpotifyArtist[]> {
-    return makeAuthenticatedRequest<SpotifyArtist[]>(`/artists/${artistIds}`, accessToken);
+  async getSeveralArtists(
+    accessToken: string, 
+    artistIds: string[]  // Changed to array
+  ): Promise<SpotifyArtist[]> {
+    const ids = Array.isArray(artistIds) ? artistIds.join(',') : artistIds;
+    return makeAuthenticatedRequest<SpotifyArtist[]>(
+      `/artists?ids=${ids}`,
+      accessToken
+    );
   },
 
   // Get Artist's Albums
